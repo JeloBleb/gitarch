@@ -25,9 +25,16 @@ fn main() {
         .diff_tree_to_tree(Some(&parent_tree), Some(&latest_tree), None)
         .unwrap();
 
+    let diff_stats = diff.stats().unwrap();
+
     for delta in diff.deltas() {}
 
-    println!("in the diff, {} files changed, {} lines were inserted, and {} lines were deleted");
+    println!(
+        "in the diff, {} files changed, {} lines were inserted, and {} lines were deleted",
+        diff_stats.files_changed(),
+        diff_stats.insertions(),
+        diff_stats.deletions()
+    );
 }
 
 fn empty_tree(repo: &Repository) -> Tree<'_> {
