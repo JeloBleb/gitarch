@@ -53,3 +53,7 @@ Data flow: git2 repo -> analysis modules -> output formatters.
 - `rayon` for parallelism -- no async.
 - No `unwrap()` in library code; `unwrap()` is fine in tests.
 - Run `cargo fmt && cargo clippy -- -D warnings && cargo test` before committing.
+
+## Agent Behavior
+
+- Read the user's source files proactively when context is needed (e.g., before giving advice on next steps).
