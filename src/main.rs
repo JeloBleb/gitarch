@@ -1,6 +1,10 @@
-use std::path::Path;
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+};
 
 use git2::*;
+use itertools::Itertools;
 
 fn main() {
     let repo_path = Path::new(".");
@@ -11,33 +15,62 @@ fn main() {
 
     revwalk.push_head().unwrap();
 
-    let latest_commit_hash = revwalk.next().unwrap().unwrap();
-    let latest_commit = repo.find_commit(latest_commit_hash).unwrap();
-    let latest_tree = latest_commit.tree().unwrap();
-    let parent_commit = latest_commit.parent(0);
+    let mut file_owners: HashMap<String, HashSet<String>> = HashMap::new();
+    let mut coupled_files: HashMap<(String, String), usize> = HashMap::new();
 
-    let parent_tree = match parent_commit {
-        Ok(parent_commit) => parent_commit.tree().unwrap(),
-        Err(_) => empty_tree(&repo),
-    };
+    for latest_commit_hash in revwalk {
+        let mut changed_files: Vec<String> = Vec::new();
 
-    let diff = repo
-        .diff_tree_to_tree(Some(&parent_tree), Some(&latest_tree), None)
-        .unwrap();
+        let latest_commit_hash = latest_commit_hash.unwrap();
 
-    let diff_stats = diff.stats().unwrap();
+        let latest_commit = repo.find_commit(latest_commit_hash).unwrap();
+        let latest_tree = latest_commit.tree().unwrap();
+        let parent_tree = latest_commit.parent(0).ok().map(|p| p.tree().unwrap());
 
-    for delta in diff.deltas() {}
+        let authour = latest_commit.author().name().unwrap().to_string();
 
-    println!(
-        "in the diff, {} files changed, {} lines were inserted, and {} lines were deleted",
-        diff_stats.files_changed(),
-        diff_stats.insertions(),
-        diff_stats.deletions()
-    );
-}
+        let diff = repo
+            .diff_tree_to_tree(parent_tree.as_ref(), Some(&latest_tree), None)
+            .unwrap();
 
-fn empty_tree(repo: &Repository) -> Tree<'_> {
-    let oid = Oid::from_str("4b825dc642cb6eb9a060e54bf899d15363d7b169").unwrap();
-    repo.find_tree(oid).unwrap()
+        let diff_stats = diff.stats().unwrap();
+
+        println!(
+            "in the diff, {} files changed, {} lines were inserted, and {} lines were deleted",
+            diff_stats.files_changed(),
+            diff_stats.insertions(),
+            diff_stats.deletions()
+        );
+
+        for delta in diff.deltas() {
+            let file_name = delta
+                .new_file()
+                .path()
+                .unwrap()
+                .to_string_lossy()
+                .to_string();
+            println!("file {} was {:?}", file_name, delta.status());
+
+            changed_files.push(file_name.clone());
+
+            file_owners
+                .entry(file_name)
+                .or_default()
+                .insert(authour.clone());
+        }
+
+        changed_files.sort();
+
+        for pair in changed_files.iter().combinations(2) {
+            *coupled_files
+                .entry((pair[0].clone(), pair[1].clone()))
+                .or_default() += 1;
+        }
+
+        println!();
+    }
+
+    println!("file_owners: {file_owners:?}");
+
+    println!("coupled files: {coupled_files:?}");
 }
