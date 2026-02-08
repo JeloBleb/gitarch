@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 pub struct Cli {
     #[arg(short, long, default_value = ".")]
     pub repo: PathBuf,
@@ -9,7 +9,7 @@ pub struct Cli {
     pub command: Commands,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 pub enum Commands {
     Knowledge,
     Coupling,
