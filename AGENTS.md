@@ -57,4 +57,5 @@ Data flow: git2 repo -> analysis modules -> output formatters.
 ## Agent Behavior
 
 - Read the user's source files proactively when context is needed (e.g., before giving advice on next steps).
+- Always reread source files before reviewing code -- never review from memory or stale state.
 - When helping the user build something, proactively list the relevant git2/library functions and signatures they'll need.
