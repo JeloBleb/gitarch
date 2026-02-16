@@ -1,2 +1,3 @@
-mod coupling;
-mod ownership;
+pub mod coupling;
+pub mod decay;
+pub mod ownership;
