@@ -4,8 +4,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::analysis::metrics::*;
 
-use itertools::Itertools;
-
 const DECAY_THRESHOLD: i64 = 180 * 24 * 60 * 60;
 const STALENESS_WEIGHT: f64 = 0.3;
 const INACTIVITY_WEIGHT: f64 = 0.7;
@@ -41,21 +39,24 @@ pub fn get_decay(commits: &[CommitInfo]) -> HashMap<String, f64> {
     file_decays
 }
 
-pub fn get_coupling(commits: &[CommitInfo]) -> HashMap<(String, String), usize> {
-    let mut couplings: HashMap<(String, String), usize> = HashMap::new();
+pub fn get_file_concentrations(
+    file_owners: &HashMap<String, HashMap<String, usize>>,
+    file_primary_owners: &HashMap<String, String>,
+) -> HashMap<String, f64> {
+    let mut files: HashMap<String, f64> = HashMap::new();
 
-    for commit in commits {
-        let mut changed_files: Vec<String> =
-            commit.file_changes.iter().map(|p| p.path.clone()).collect();
+    for (path, authors) in file_owners {
+        let concentration = *authors
+            .get(
+                file_primary_owners
+                    .get(path)
+                    .expect("primary owner invalid"),
+            )
+            .unwrap() as f64
+            / authors.values().sum::<usize>() as f64;
 
-        changed_files.sort();
-
-        for entry in changed_files.iter().combinations(2) {
-            *couplings
-                .entry((entry[0].clone(), entry[1].clone()))
-                .or_default() += 1;
-        }
+        files.insert(path.clone(), concentration);
     }
 
-    couplings
+    files
 }

@@ -1,6 +1,32 @@
 use std::collections::HashMap;
 
 use crate::repo::CommitInfo;
+use itertools::Itertools;
+
+#[derive(Debug)]
+pub struct SummaryStats {
+    commits: usize,
+    files: usize,
+    file_changes: usize,
+    authors: usize,
+}
+
+pub fn get_summary(commits: &[CommitInfo]) -> SummaryStats {
+    let files = get_owners(commits).len();
+
+    let file_changes = commits.iter().map(|p| p.file_changes.len()).sum();
+
+    let authors = get_user_last_active(commits).len();
+
+    let commits = commits.len();
+
+    SummaryStats {
+        commits,
+        files,
+        file_changes,
+        authors,
+    }
+}
 
 pub fn get_owners(commits: &[CommitInfo]) -> HashMap<String, HashMap<String, usize>> {
     let mut files: HashMap<String, HashMap<String, usize>> = HashMap::new();
@@ -19,6 +45,24 @@ pub fn get_owners(commits: &[CommitInfo]) -> HashMap<String, HashMap<String, usi
     files
 }
 
+pub fn get_coupling(commits: &[CommitInfo]) -> HashMap<(String, String), usize> {
+    let mut couplings: HashMap<(String, String), usize> = HashMap::new();
+
+    for commit in commits {
+        let mut changed_files: Vec<String> =
+            commit.file_changes.iter().map(|p| p.path.clone()).collect();
+
+        changed_files.sort();
+
+        for entry in changed_files.iter().combinations(2) {
+            *couplings
+                .entry((entry[0].clone(), entry[1].clone()))
+                .or_default() += 1;
+        }
+    }
+
+    couplings
+}
 pub fn get_primary_owners(
     file_owners: &HashMap<String, HashMap<String, usize>>,
 ) -> HashMap<String, String> {

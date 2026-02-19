@@ -6,12 +6,13 @@ pub struct Cli {
     #[arg(short, long, default_value = ".")]
     pub repo: PathBuf,
     #[command(subcommand)]
-    pub command: Commands,
+    pub command_type: Commands,
 }
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    Knowledge,
+    Summary,
     Coupling,
-    Diffs,
+    Ownership,
+    Decay,
 }
