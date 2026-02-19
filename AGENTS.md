@@ -16,8 +16,15 @@ Rust code themselves.
 ## Project Overview
 
 `gitarch` is a Rust 2024 edition CLI tool that extracts implicit knowledge from git
-repository commit history -- knowledge maps, change coupling, ownership decay,
-architecture evolution, and project health metrics.
+repository commit history -- ownership, change coupling, decay scoring, churn, and
+project health metrics. It aims to be a modern, streamlined open-source replacement
+for code-maat, with structured JSON output designed for LLM consumption.
+
+Key differentiators from code-maat:
+- Direct git2 repo access (no log file export step)
+- Composite decay scoring (unique -- not in code-maat)
+- JSON output designed for LLM pipelines
+- Single binary distribution (Rust vs JVM/Clojure)
 
 ## Commands
 
@@ -26,7 +33,6 @@ cargo build                        # build
 cargo run -- <subcommand> [args]   # run
 cargo test                         # all tests
 cargo test <test_name>             # single test (substring match)
-cargo test --lib analysis::knowledge  # tests in a specific module
 cargo clippy -- -D warnings        # lint
 cargo fmt                          # format
 ```
@@ -36,20 +42,20 @@ cargo fmt                          # format
 ```
 src/
   main.rs           # clap CLI entry point (keep thin)
-  cli/              # subcommand definitions (clap derive structs)
+  cli.rs            # subcommand definitions (clap derive structs)
   repo.rs           # git2 data access layer
   analysis/         # core logic -- independent of output formatting
-    knowledge.rs    # knowledge map / bus factor
-    coupling.rs     # change coupling
-    decay.rs        # ownership decay
-    evolution.rs    # architecture timeline
-    health.rs       # project health metrics
-  output/           # formatters consuming analysis structs
-    terminal.rs     # human-readable output
-    json.rs         # machine-readable JSON output
+    metrics.rs      # raw data extraction (ownership, counts, timestamps, churn)
+    coupling.rs     # change coupling + coupling percentage
+    decay.rs        # decay scoring (consumes metrics)
+    evolution.rs    # structural event detection (planned)
+    health.rs       # aggregate project health (planned)
+  output/           # formatters consuming analysis results
+    terminal.rs     # human-readable terminal output
+    json.rs         # structured JSON output (LLM-friendly)
 ```
 
-Data flow: git2 repo -> analysis modules -> output formatters.
+Data flow: git2 repo -> Vec<CommitInfo> -> metrics -> analysis -> output.
 
 ## Project-Specific Conventions
 

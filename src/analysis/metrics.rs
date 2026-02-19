@@ -34,28 +34,6 @@ pub fn get_primary_owners(
     file_primary_owners
 }
 
-pub fn get_file_concentrations(
-    file_owners: &HashMap<String, HashMap<String, usize>>,
-    file_primary_owners: &HashMap<String, String>,
-) -> HashMap<String, f64> {
-    let mut files: HashMap<String, f64> = HashMap::new();
-
-    for (path, authors) in file_owners {
-        let concentration = *authors
-            .get(
-                file_primary_owners
-                    .get(path)
-                    .expect("primary owner invalid"),
-            )
-            .unwrap() as f64
-            / authors.values().sum::<usize>() as f64;
-
-        files.insert(path.clone(), concentration);
-    }
-
-    files
-}
-
 pub fn get_user_last_active(commits: &[CommitInfo]) -> HashMap<String, i64> {
     let mut users: HashMap<String, i64> = HashMap::new();
 
@@ -66,4 +44,44 @@ pub fn get_user_last_active(commits: &[CommitInfo]) -> HashMap<String, i64> {
     }
 
     users
+}
+pub fn get_revision_counts(commits: &[CommitInfo]) -> HashMap<String, usize> {
+    let mut revision_counts: HashMap<String, usize> = HashMap::new();
+
+    for commit in commits {
+        commit
+            .file_changes
+            .iter()
+            .for_each(|p| *revision_counts.entry(p.path.clone()).or_insert(0) += 1);
+    }
+
+    revision_counts
+}
+
+pub fn get_line_changes(commits: &[CommitInfo]) -> HashMap<String, (usize, usize)> {
+    let mut line_changes: HashMap<String, (usize, usize)> = HashMap::new();
+
+    for commit in commits {
+        for file in &commit.file_changes {
+            let (insertions, deletions) = line_changes.entry(file.path.clone()).or_insert((0, 0));
+            *insertions += file.insertions;
+            *deletions += file.deletions;
+        }
+    }
+
+    line_changes
+}
+
+pub fn get_files_last_modified(commits: &[CommitInfo]) -> HashMap<String, i64> {
+    let mut timestamps: HashMap<String, i64> = HashMap::new();
+
+    for commit in commits {
+        for file in &commit.file_changes {
+            timestamps
+                .entry(file.path.clone())
+                .or_insert(commit.timestamp);
+        }
+    }
+
+    timestamps
 }

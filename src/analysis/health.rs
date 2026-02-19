@@ -1,12 +1,10 @@
+use crate::repo::CommitInfo;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::{
-    analysis::ownership::{
-        get_file_concentrations, get_owners, get_primary_owners, get_user_last_active,
-    },
-    repo::CommitInfo,
-};
+use crate::analysis::metrics::*;
+
+use itertools::Itertools;
 
 const DECAY_THRESHOLD: i64 = 180 * 24 * 60 * 60;
 const STALENESS_WEIGHT: f64 = 0.3;
@@ -43,43 +41,21 @@ pub fn get_decay(commits: &[CommitInfo]) -> HashMap<String, f64> {
     file_decays
 }
 
-pub fn get_revision_counts(commits: &[CommitInfo]) -> HashMap<String, usize> {
-    let mut revision_counts: HashMap<String, usize> = HashMap::new();
+pub fn get_coupling(commits: &[CommitInfo]) -> HashMap<(String, String), usize> {
+    let mut couplings: HashMap<(String, String), usize> = HashMap::new();
 
     for commit in commits {
-        commit
-            .file_changes
-            .iter()
-            .for_each(|p| *revision_counts.entry(p.path.clone()).or_insert(0) += 1);
-    }
+        let mut changed_files: Vec<String> =
+            commit.file_changes.iter().map(|p| p.path.clone()).collect();
 
-    revision_counts
-}
+        changed_files.sort();
 
-pub fn get_line_changes(commits: &[CommitInfo]) -> HashMap<String, (usize, usize)> {
-    let mut line_changes: HashMap<String, (usize, usize)> = HashMap::new();
-
-    for commit in commits {
-        for file in &commit.file_changes {
-            let (insertions, deletions) = line_changes.entry(file.path.clone()).or_insert((0, 0));
-            *insertions += file.insertions;
-            *deletions += file.deletions;
+        for entry in changed_files.iter().combinations(2) {
+            *couplings
+                .entry((entry[0].clone(), entry[1].clone()))
+                .or_default() += 1;
         }
     }
 
-    line_changes
-}
-
-pub fn get_files_last_modified(commits: &[CommitInfo]) -> HashMap<String, i64> {
-    let mut timestamps: HashMap<String, i64> = HashMap::new();
-
-    for commit in commits {
-        for file in &commit.file_changes {
-            timestamps
-                .entry(file.path.clone())
-                .or_insert(commit.timestamp);
-        }
-    }
-
-    timestamps
+    couplings
 }
