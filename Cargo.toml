@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.100"
 clap = {version = "4.5.56", features = ["derive"]}
+cliux = "0.5.1"
 git2 = "0.20.3"
 itertools = "0.14.0"
 thiserror = "2.0.18"

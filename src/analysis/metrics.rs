@@ -5,10 +5,10 @@ use itertools::Itertools;
 
 #[derive(Debug)]
 pub struct SummaryStats {
-    commits: usize,
-    files: usize,
-    file_changes: usize,
-    authors: usize,
+    pub commits: usize,
+    pub files: usize,
+    pub file_changes: usize,
+    pub authors: usize,
 }
 
 pub fn get_summary(commits: &[CommitInfo]) -> SummaryStats {
