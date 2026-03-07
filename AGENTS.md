@@ -41,21 +41,15 @@ cargo fmt                          # format
 
 ```
 src/
-  main.rs           # clap CLI entry point (keep thin)
+  main.rs           # clap CLI entry point + output formatting
   cli.rs            # subcommand definitions (clap derive structs)
   repo.rs           # git2 data access layer
   analysis/         # core logic -- independent of output formatting
-    metrics.rs      # raw data extraction (ownership, counts, timestamps, churn)
-    coupling.rs     # change coupling + coupling percentage
-    decay.rs        # decay scoring (consumes metrics)
-    evolution.rs    # structural event detection (planned)
-    health.rs       # aggregate project health (planned)
-  output/           # formatters consuming analysis results
-    terminal.rs     # human-readable terminal output
-    json.rs         # structured JSON output (LLM-friendly)
+    metrics.rs      # raw data extraction (ownership, coupling, counts, timestamps, churn)
+    derived.rs      # derived analysis (decay scoring, file concentration)
 ```
 
-Data flow: git2 repo -> Vec<CommitInfo> -> metrics -> analysis -> output.
+Data flow: git2 repo -> Vec<CommitInfo> -> metrics -> derived analysis -> output.
 
 ## Project-Specific Conventions
 

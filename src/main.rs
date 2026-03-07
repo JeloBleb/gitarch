@@ -2,18 +2,20 @@ mod analysis;
 mod cli;
 mod repo;
 
+use cliux::Table;
+use itertools::Itertools;
 use std::collections::HashMap;
-
-
-use cliux::{Boxed, Table};
 
 use crate::{
     analysis::{
         derived::get_decay,
-        metrics::{SummaryStats,get_primary_owners, get_coupling, get_owners, get_summary},
+        metrics::{
+            SummaryStats, get_coupling, get_file_statuses, get_owners, get_primary_owners,
+            get_summary,
+        },
     },
     cli::{Cli, Commands},
-    repo::{CommitInfo, parse_commit_info},
+    repo::{CommitInfo, FileChange, FileStatus, parse_commit_info},
 };
 
 use clap::Parser;
@@ -31,8 +33,22 @@ fn main() {
     };
 }
 
+fn filter_deleted<V>(files: HashMap<String, V>, commits: &[CommitInfo]) -> HashMap<String, V> {
+    let file_statuses = get_file_statuses(commits);
+    files
+        .into_iter()
+        .filter(|p| {
+            *file_statuses
+                .get(&p.0)
+                .expect("mismatch between file status and other hashmap")
+                != FileStatus::Deleted
+        })
+        .collect::<HashMap<String, V>>()
+}
+
 fn print_summary(commits: &[CommitInfo]) {
     let summary = get_summary(commits);
+
     let SummaryStats {
         commits,
         files,
@@ -52,8 +68,11 @@ fn print_summary(commits: &[CommitInfo]) {
 
 fn print_decay(commits: &[CommitInfo]) {
     let decay = get_decay(commits);
+    let decay = filter_deleted(decay, commits);
+
     let mut table = Table::new().headers(&["File", "Decay Score"]);
-    for (file, decay_score) in decay {
+
+    for (file, decay_score) in decay.into_iter().sorted_by(|a, b| b.1.total_cmp(&a.1)) {
         table = table.row(&[&file, &decay_score.to_string()]);
     }
 
@@ -62,15 +81,24 @@ fn print_decay(commits: &[CommitInfo]) {
 
 fn print_coupling(commits: &[CommitInfo]) {
     let coupling = get_coupling(commits);
+
+    let file_statuses = get_file_statuses(commits);
+
     let coupling = coupling
         .into_iter()
         .filter(|p| p.1 > (commits.len() / 5))
-        ;
+        .filter(|p| {
+            file_statuses.get(&p.0.0) != Some(&FileStatus::Deleted)
+                && file_statuses.get(&p.0.1) != Some(&FileStatus::Deleted)
+        });
 
     let mut table = Table::new().headers(&["File Pair", "Coupling"]);
 
     for (file_pair, coupling) in coupling {
-        table = table.row(&[&format!("{} and {}", file_pair.0, file_pair.1), &coupling.to_string()])
+        table = table.row(&[
+            &format!("{} and {}", file_pair.0, file_pair.1),
+            &coupling.to_string(),
+        ])
     }
 
     table.print();
@@ -78,12 +106,13 @@ fn print_coupling(commits: &[CommitInfo]) {
 
 fn print_owners(commits: &[CommitInfo]) {
     let owners = get_primary_owners(&get_owners(commits));
+    let owners = filter_deleted(owners, commits);
 
     let mut table = Table::new().headers(&["File", "Owner"]);
 
     for (file, owner) in owners {
         table = table.row(&[&file, &owner]);
     }
-    
+
     table.print();
 }

@@ -53,44 +53,38 @@ newcomer.
 ## Usage
 
 ```bash
+gitarch summary .
 gitarch ownership .
 gitarch coupling .
 gitarch decay .
-gitarch churn .
-gitarch summary .
-gitarch health .
 ```
 
-Use `--json` for machine-readable output.
+Pass `--repo <path>` to analyze a different repository (defaults to `.`).
+`--json` flag for machine-readable output (planned).
 
 ## Architecture
 
 ```
 src/
-  main.rs           # clap CLI entry point
-  cli.rs            # subcommand definitions
+  main.rs           # clap CLI entry point + output formatting
+  cli.rs            # subcommand definitions (clap derive structs)
   repo.rs           # git2 data access layer
   analysis/
-    metrics.rs      # raw data extraction (ownership, counts, timestamps, churn)
-    coupling.rs     # change coupling + coupling percentage
-    decay.rs        # decay scoring (consumes metrics)
-    evolution.rs    # structural event detection (planned)
-    health.rs       # aggregate project health (planned)
-  output/
-    terminal.rs     # human-readable terminal output
-    json.rs         # structured JSON output (LLM-friendly)
+    metrics.rs      # raw data extraction (ownership, coupling, counts, timestamps, churn)
+    derived.rs      # derived analysis (decay scoring, file concentration)
 ```
 
-Data flow: `git2 repo -> Vec<CommitInfo> -> metrics -> analysis -> output`
+Data flow: `git2 repo -> Vec<CommitInfo> -> metrics -> derived analysis -> output`
 
 ## Tech Stack
 
 - **git2** -- libgit2 bindings for direct repository access
 - **clap** (derive) -- CLI parsing
+- **cliux** -- terminal table output
 - **thiserror** -- typed errors in library code
 - **anyhow** -- error handling in CLI layer
 - **itertools** -- combinatorics for coupling analysis
-- **serde** -- JSON serialization for output
+- **serde** -- JSON serialization for output (planned)
 - **rayon** -- parallel analysis (planned)
 
 ## Build Order
@@ -99,11 +93,11 @@ Data flow: `git2 repo -> Vec<CommitInfo> -> metrics -> analysis -> output`
 2. ~~Core metrics -- ownership, revision counts, churn, timestamps~~
 3. ~~Coupling -- raw co-change counts~~
 4. ~~Decay -- composite decay scoring~~
-5. Module reorganization (metrics.rs split)
-6. Coupling percentage + CLI filters
-7. Summary, author churn, absolute churn, communication
-8. Wire up CLI + terminal output
-9. JSON output
+5. ~~Module reorganization (metrics.rs + derived.rs)~~
+6. ~~CLI wiring + terminal table output~~
+7. Output improvements (sorting, filtering deleted files, noise reduction)
+8. JSON output
+9. Communication -- developer coupling
 10. Evolution -- structural event detection
 11. Health -- aggregate project health
 12. Tests

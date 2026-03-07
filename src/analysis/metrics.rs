@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 
-use crate::repo::CommitInfo;
+use crate::repo::{CommitInfo, FileStatus};
 use itertools::Itertools;
 
 #[derive(Debug)]
@@ -12,7 +12,10 @@ pub struct SummaryStats {
 }
 
 pub fn get_summary(commits: &[CommitInfo]) -> SummaryStats {
-    let files = get_owners(commits).len();
+    let files = get_file_statuses(commits)
+        .iter()
+        .filter(|p| *p.1 != FileStatus::Deleted)
+        .count();
 
     let file_changes = commits.iter().map(|p| p.file_changes.len()).sum();
 
@@ -26,6 +29,20 @@ pub fn get_summary(commits: &[CommitInfo]) -> SummaryStats {
         file_changes,
         authors,
     }
+}
+
+pub fn get_file_statuses(commits: &[CommitInfo]) -> HashMap<String, FileStatus> {
+    let mut file_statuses: HashMap<String, FileStatus> = HashMap::new();
+
+    for commit in commits {
+        for file in &commit.file_changes {
+            file_statuses
+                .entry(file.path.clone())
+                .or_insert(file.status);
+        }
+    }
+
+    file_statuses
 }
 
 pub fn get_owners(commits: &[CommitInfo]) -> HashMap<String, HashMap<String, usize>> {

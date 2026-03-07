@@ -28,7 +28,7 @@ pub struct FileChange {
     pub deletions: usize,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq())]
 pub enum FileStatus {
     Added,
     Modified,
