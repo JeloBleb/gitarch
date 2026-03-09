@@ -88,6 +88,21 @@ pub fn get_coupling(
     couplings
 }
 
+pub fn get_owner_coupling(commits: &[CommitInfo]) -> HashMap<(String, String), usize> {
+    let mut owner_coupling: HashMap<(String, String), usize> = HashMap::new();
+    let file_owners = get_owners(commits);
+
+    for (_file, owners) in file_owners {
+        for owner_pair in owners.keys().sorted().combinations(2) {
+            *owner_coupling
+                .entry((owner_pair[0].clone(), owner_pair[1].clone()))
+                .or_default() += 1;
+        }
+    }
+
+    owner_coupling
+}
+
 pub fn get_primary_owners(
     file_owners: &HashMap<String, HashMap<String, usize>>,
 ) -> HashMap<String, String> {
@@ -149,6 +164,18 @@ pub fn get_files_last_modified(commits: &[CommitInfo]) -> HashMap<String, i64> {
             timestamps
                 .entry(file.path.clone())
                 .or_insert(commit.timestamp);
+        }
+    }
+
+    timestamps
+}
+
+pub fn get_files_creation(commits: &[CommitInfo]) -> HashMap<String, i64> {
+    let mut timestamps: HashMap<String, i64> = HashMap::new();
+
+    for commit in commits {
+        for file in &commit.file_changes {
+            timestamps.insert(file.path.clone(), commit.timestamp);
         }
     }
 

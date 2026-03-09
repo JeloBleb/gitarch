@@ -12,8 +12,8 @@ use crate::{
     analysis::{
         derived::get_decay,
         metrics::{
-            SummaryStats, get_coupling, get_file_statuses, get_owners, get_primary_owners,
-            get_summary,
+            SummaryStats, get_coupling, get_file_statuses, get_owner_coupling, get_owners,
+            get_primary_owners, get_summary,
         },
     },
     cli::{Cli, Commands},
@@ -40,6 +40,21 @@ struct OwnershipEntry {
     owner: String,
 }
 
+#[derive(Serialize)]
+struct CommunicationEntry {
+    owner_pair: (String, String),
+    count: usize,
+}
+
+struct ChurnEntry {
+    file: String,
+    revisions: usize,
+    insertions: usize,
+    deletions: usize,
+    created: i64,
+    last_modified: i64,
+}
+
 fn main() {
     let command = Cli::parse();
 
@@ -52,6 +67,8 @@ fn main() {
             print_coupling(&commits, max_changeset_size, command.json)
         }
         Commands::Ownership => print_owners(&commits, command.json),
+        Commands::Communication => print_communication(&commits, command.json),
+        Commands::Churn => print_churn(&commits, command.json),
     };
 }
 
@@ -161,6 +178,29 @@ fn print_owners(commits: &[CommitInfo], json_out: bool) {
 
         for OwnershipEntry { file, owner } in owners {
             table = table.row(&[&file, &owner]);
+        }
+
+        table.print();
+    }
+}
+
+fn print_communication(commits: &[CommitInfo], json_out: bool) {
+    let owner_coupling = get_owner_coupling(commits);
+    let owner_coupling = owner_coupling
+        .into_iter()
+        .map(|(owner_pair, count)| CommunicationEntry { owner_pair, count });
+
+    if json_out {
+        let json = to_string_pretty(&owner_coupling.collect::<Vec<CommunicationEntry>>()).unwrap();
+        println!("{json}");
+    } else {
+        let mut table = Table::new().headers(&["Owner Pair", "File Overlap"]);
+
+        for CommunicationEntry { owner_pair, count } in owner_coupling {
+            table = table.row(&[
+                &format!("{} and {}", owner_pair.0, owner_pair.1),
+                &count.to_string(),
+            ]);
         }
 
         table.print();

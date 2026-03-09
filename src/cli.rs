@@ -18,6 +18,8 @@ pub enum Commands {
         #[arg(long, default_value_t = 20)]
         max_changeset_size: usize,
     },
+    Communication,
     Ownership,
     Decay,
+    Churn,
 }
