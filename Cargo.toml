@@ -9,4 +9,6 @@ clap = {version = "4.5.56", features = ["derive"]}
 cliux = "0.5.1"
 git2 = "0.20.3"
 itertools = "0.14.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
 thiserror = "2.0.18"

@@ -7,6 +7,8 @@ pub struct Cli {
     pub repo: PathBuf,
     #[command(subcommand)]
     pub command_type: Commands,
+    #[arg(long)]
+    pub json: bool,
 }
 
 #[derive(Subcommand, Debug)]

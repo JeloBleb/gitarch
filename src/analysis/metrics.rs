@@ -1,9 +1,10 @@
-use std::{collections::HashMap, hash::Hash};
+use std::collections::HashMap;
 
 use crate::repo::{CommitInfo, FileStatus};
 use itertools::Itertools;
+use serde::Serialize;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct SummaryStats {
     pub commits: usize,
     pub files: usize,
@@ -70,7 +71,7 @@ pub fn get_coupling(
 
     for commit in commits
         .iter()
-        .filter(|p| p.file_changes.len() < max_changeset_size)
+        .filter(|p| p.file_changes.len() <= max_changeset_size)
     {
         let mut changed_files: Vec<String> =
             commit.file_changes.iter().map(|p| p.path.clone()).collect();

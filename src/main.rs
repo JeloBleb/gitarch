@@ -4,6 +4,8 @@ mod repo;
 
 use cliux::Table;
 use itertools::Itertools;
+use serde::Serialize;
+use serde_json::to_string_pretty;
 use std::collections::HashMap;
 
 use crate::{
@@ -15,10 +17,28 @@ use crate::{
         },
     },
     cli::{Cli, Commands},
-    repo::{CommitInfo, FileChange, FileStatus, parse_commit_info},
+    repo::{CommitInfo, FileStatus, parse_commit_info},
 };
 
 use clap::Parser;
+
+#[derive(Serialize)]
+struct DecayEntry {
+    file: String,
+    score: f64,
+}
+
+#[derive(Serialize)]
+struct CouplingEntry {
+    file_pair: (String, String),
+    count: usize,
+}
+
+#[derive(Serialize)]
+struct OwnershipEntry {
+    file: String,
+    owner: String,
+}
 
 fn main() {
     let command = Cli::parse();
@@ -26,10 +46,12 @@ fn main() {
     let commits = parse_commit_info(&command.repo).unwrap();
 
     match command.command_type {
-        Commands::Summary => print_summary(&commits),
-        Commands::Decay => print_decay(&commits),
-        Commands::Coupling { max_changeset_size } => print_coupling(&commits, max_changeset_size),
-        Commands::Ownership => print_owners(&commits),
+        Commands::Summary => print_summary(&commits, command.json),
+        Commands::Decay => print_decay(&commits, command.json),
+        Commands::Coupling { max_changeset_size } => {
+            print_coupling(&commits, max_changeset_size, command.json)
+        }
+        Commands::Ownership => print_owners(&commits, command.json),
     };
 }
 
@@ -46,40 +68,55 @@ fn filter_deleted<V>(files: HashMap<String, V>, commits: &[CommitInfo]) -> HashM
         .collect::<HashMap<String, V>>()
 }
 
-fn print_summary(commits: &[CommitInfo]) {
+fn print_summary(commits: &[CommitInfo], json_out: bool) {
     let summary = get_summary(commits);
 
-    let SummaryStats {
-        commits,
-        files,
-        file_changes,
-        authors,
-    } = summary;
-    let table = Table::new()
-        .headers(&["Commits", "Files", "File Changes", "Authors"])
-        .row(&[
-            &commits.to_string(),
-            &files.to_string(),
-            &file_changes.to_string(),
-            &authors.to_string(),
-        ]);
-    table.print();
+    if json_out {
+        let json = to_string_pretty(&summary).unwrap();
+        println!("{json}");
+    } else {
+        let SummaryStats {
+            commits,
+            files,
+            file_changes,
+            authors,
+        } = summary;
+
+        let table = Table::new()
+            .headers(&["Commits", "Files", "File Changes", "Authors"])
+            .row(&[
+                &commits.to_string(),
+                &files.to_string(),
+                &file_changes.to_string(),
+                &authors.to_string(),
+            ]);
+        table.print();
+    }
 }
 
-fn print_decay(commits: &[CommitInfo]) {
+fn print_decay(commits: &[CommitInfo], json_out: bool) {
     let decay = get_decay(commits);
     let decay = filter_deleted(decay, commits);
+    let decay = decay
+        .into_iter()
+        .map(|(file, score)| DecayEntry { file, score })
+        .sorted_by(|a, b| b.score.total_cmp(&a.score));
 
-    let mut table = Table::new().headers(&["File", "Decay Score"]);
+    if json_out {
+        let json = to_string_pretty(&decay.collect::<Vec<DecayEntry>>()).unwrap();
+        println!("{json}");
+    } else {
+        let mut table = Table::new().headers(&["File", "Decay Score"]);
 
-    for (file, decay_score) in decay.into_iter().sorted_by(|a, b| b.1.total_cmp(&a.1)) {
-        table = table.row(&[&file, &decay_score.to_string()]);
+        for DecayEntry { file, score } in decay {
+            table = table.row(&[&file, &score.to_string()]);
+        }
+
+        table.print();
     }
-
-    table.print();
 }
 
-fn print_coupling(commits: &[CommitInfo], max_changeset_size: usize) {
+fn print_coupling(commits: &[CommitInfo], max_changeset_size: usize, json_out: bool) {
     let coupling = get_coupling(commits, max_changeset_size);
 
     let file_statuses = get_file_statuses(commits);
@@ -90,29 +127,42 @@ fn print_coupling(commits: &[CommitInfo], max_changeset_size: usize) {
         .filter(|p| {
             file_statuses.get(&p.0.0) != Some(&FileStatus::Deleted)
                 && file_statuses.get(&p.0.1) != Some(&FileStatus::Deleted)
-        });
+        })
+        .map(|(file_pair, count)| CouplingEntry { file_pair, count });
 
-    let mut table = Table::new().headers(&["File Pair", "Coupling"]);
+    if json_out {
+        let json = serde_json::to_string_pretty(&coupling.collect::<Vec<CouplingEntry>>()).unwrap();
+        println!("{json}");
+    } else {
+        let mut table = Table::new().headers(&["File Pair", "Coupling"]);
 
-    for (file_pair, coupling) in coupling {
-        table = table.row(&[
-            &format!("{} and {}", file_pair.0, file_pair.1),
-            &coupling.to_string(),
-        ])
+        for CouplingEntry { file_pair, count } in coupling {
+            table = table.row(&[
+                &format!("{} and {}", file_pair.0, file_pair.1),
+                &count.to_string(),
+            ])
+        }
+
+        table.print();
     }
-
-    table.print();
 }
 
-fn print_owners(commits: &[CommitInfo]) {
+fn print_owners(commits: &[CommitInfo], json_out: bool) {
     let owners = get_primary_owners(&get_owners(commits));
-    let owners = filter_deleted(owners, commits);
+    let owners = filter_deleted(owners, commits)
+        .into_iter()
+        .map(|(file, owner)| OwnershipEntry { file, owner });
 
-    let mut table = Table::new().headers(&["File", "Owner"]);
+    if json_out {
+        let json = to_string_pretty(&owners.collect::<Vec<OwnershipEntry>>()).unwrap();
+        println!("{json}");
+    } else {
+        let mut table = Table::new().headers(&["File", "Owner"]);
 
-    for (file, owner) in owners {
-        table = table.row(&[&file, &owner]);
+        for OwnershipEntry { file, owner } in owners {
+            table = table.row(&[&file, &owner]);
+        }
+
+        table.print();
     }
-
-    table.print();
 }
