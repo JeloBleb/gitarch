@@ -12,7 +12,10 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     Summary,
-    Coupling,
+    Coupling {
+        #[arg(long, default_value_t = 20)]
+        max_changeset_size: usize,
+    },
     Ownership,
     Decay,
 }

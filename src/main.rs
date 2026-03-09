@@ -28,7 +28,7 @@ fn main() {
     match command.command_type {
         Commands::Summary => print_summary(&commits),
         Commands::Decay => print_decay(&commits),
-        Commands::Coupling => print_coupling(&commits),
+        Commands::Coupling { max_changeset_size } => print_coupling(&commits, max_changeset_size),
         Commands::Ownership => print_owners(&commits),
     };
 }
@@ -79,8 +79,8 @@ fn print_decay(commits: &[CommitInfo]) {
     table.print();
 }
 
-fn print_coupling(commits: &[CommitInfo]) {
-    let coupling = get_coupling(commits);
+fn print_coupling(commits: &[CommitInfo], max_changeset_size: usize) {
+    let coupling = get_coupling(commits, max_changeset_size);
 
     let file_statuses = get_file_statuses(commits);
 

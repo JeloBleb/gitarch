@@ -62,10 +62,16 @@ pub fn get_owners(commits: &[CommitInfo]) -> HashMap<String, HashMap<String, usi
     files
 }
 
-pub fn get_coupling(commits: &[CommitInfo]) -> HashMap<(String, String), usize> {
+pub fn get_coupling(
+    commits: &[CommitInfo],
+    max_changeset_size: usize,
+) -> HashMap<(String, String), usize> {
     let mut couplings: HashMap<(String, String), usize> = HashMap::new();
 
-    for commit in commits {
+    for commit in commits
+        .iter()
+        .filter(|p| p.file_changes.len() < max_changeset_size)
+    {
         let mut changed_files: Vec<String> =
             commit.file_changes.iter().map(|p| p.path.clone()).collect();
 
@@ -80,6 +86,7 @@ pub fn get_coupling(commits: &[CommitInfo]) -> HashMap<(String, String), usize> 
 
     couplings
 }
+
 pub fn get_primary_owners(
     file_owners: &HashMap<String, HashMap<String, usize>>,
 ) -> HashMap<String, String> {
