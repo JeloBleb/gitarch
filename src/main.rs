@@ -2,6 +2,7 @@ mod analysis;
 mod cli;
 mod repo;
 
+use chrono::{DateTime, Utc};
 use cliux::Table;
 use itertools::Itertools;
 use serde::Serialize;
@@ -12,8 +13,9 @@ use crate::{
     analysis::{
         derived::get_decay,
         metrics::{
-            SummaryStats, get_coupling, get_file_statuses, get_owner_coupling, get_owners,
-            get_primary_owners, get_summary,
+            SummaryStats, get_coupling, get_file_statuses, get_files_creation,
+            get_files_last_modified, get_line_changes, get_owner_coupling, get_owners,
+            get_primary_owners, get_revision_counts, get_summary,
         },
     },
     cli::{Cli, Commands},
@@ -46,13 +48,14 @@ struct CommunicationEntry {
     count: usize,
 }
 
+#[derive(Serialize)]
 struct ChurnEntry {
     file: String,
     revisions: usize,
     insertions: usize,
     deletions: usize,
-    created: i64,
-    last_modified: i64,
+    created: DateTime<Utc>,
+    last_modified: DateTime<Utc>,
 }
 
 fn main() {
@@ -201,6 +204,65 @@ fn print_communication(commits: &[CommitInfo], json_out: bool) {
                 &format!("{} and {}", owner_pair.0, owner_pair.1),
                 &count.to_string(),
             ]);
+        }
+
+        table.print();
+    }
+}
+
+fn print_churn(commits: &[CommitInfo], json_out: bool) {
+    let line_changes = get_line_changes(commits);
+    let revisions = get_revision_counts(commits);
+    let last_modified = get_files_last_modified(commits);
+    let created = get_files_creation(commits);
+
+    let mut churn_entries: Vec<ChurnEntry> = Vec::new();
+
+    for (file, (insertions, deletions)) in line_changes {
+        let revisions = *revisions.get(&file).unwrap();
+        let created = DateTime::from_timestamp(*created.get(&file).unwrap(), 0).unwrap();
+        let last_modified =
+            DateTime::from_timestamp(*last_modified.get(&file).unwrap(), 0).unwrap();
+        churn_entries.push(ChurnEntry {
+            file,
+            revisions,
+            insertions,
+            deletions,
+            created,
+            last_modified,
+        });
+    }
+
+    if json_out {
+        let json = to_string_pretty(&churn_entries).unwrap();
+        println!("{json}");
+    } else {
+        let mut table = Table::new().headers(&[
+            "File",
+            "Revisions",
+            "Insertions",
+            "Deletions",
+            "Created",
+            "Last Modified",
+        ]);
+
+        for ChurnEntry {
+            file,
+            revisions,
+            insertions,
+            deletions,
+            created,
+            last_modified,
+        } in churn_entries
+        {
+            table = table.row(&[
+                &file,
+                &revisions.to_string(),
+                &insertions.to_string(),
+                &deletions.to_string(),
+                &created.format("%d-%m-%Y").to_string(),
+                &last_modified.format("%d-%m-%Y").to_string(),
+            ])
         }
 
         table.print();
