@@ -124,7 +124,11 @@ pub fn get_primary_owners(
         .map(|p| {
             (
                 p.0.clone(),
-                p.1.iter().max_by_key(|p| p.1).unwrap().0.clone(),
+                p.1.iter()
+                    .max_by_key(|p| p.1)
+                    .expect("iterator was empty")
+                    .0
+                    .clone(),
             )
         })
         .collect();

@@ -9,6 +9,10 @@ pub struct Cli {
     pub command_type: Commands,
     #[arg(long)]
     pub json: bool,
+    #[arg(long)]
+    pub since: Option<chrono::NaiveDate>,
+    #[arg(long)]
+    pub until: Option<chrono::NaiveDate>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -23,10 +27,5 @@ pub enum Commands {
     Communication,
     Ownership,
     Decay,
-    Churn {
-        #[arg(long)]
-        since: Option<chrono::NaiveDate>,
-        #[arg(long)]
-        until: Option<chrono::NaiveDate>,
-    },
+    Churn,
 }

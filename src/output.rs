@@ -1,6 +1,5 @@
 use crate::analysis::{derived::*, metrics::*};
 use crate::*;
-use chrono::{DateTime, NaiveDate};
 use cliux::Table;
 use itertools::Itertools;
 use serde::Serialize;
@@ -174,31 +173,15 @@ pub fn print_communication(commits: &[CommitInfo], json_out: bool) {
     }
 }
 
-pub fn print_churn(
-    commits: &[CommitInfo],
-    since: Option<NaiveDate>,
-    until: Option<NaiveDate>,
-    json_out: bool,
-) {
+pub fn print_churn(commits: &[CommitInfo], filtered_commits: &[CommitInfo], json_out: bool) {
     let last_modified = get_files_last_modified(commits);
     let created = get_files_creation(commits);
 
-    let commits: Vec<CommitInfo> = commits
-        .iter()
-        .filter(|commit| {
-            let date = DateTime::from_timestamp(commit.timestamp, 0)
-                .unwrap()
-                .date_naive();
-            since.is_none_or(|p| date >= p) && until.is_none_or(|p| date <= p)
-        })
-        .cloned()
-        .collect();
-
-    let line_changes = get_line_changes(&commits);
-    let line_changes = filter_deleted(line_changes, &commits)
+    let line_changes = get_line_changes(filtered_commits);
+    let line_changes = filter_deleted(line_changes, commits)
         .into_iter()
         .sorted_by(|(file, _), (file2, _)| file.cmp(file2));
-    let revisions = get_revision_counts(&commits);
+    let revisions = get_revision_counts(filtered_commits);
 
     let mut churn_entries: Vec<ChurnEntry> = Vec::new();
 
