@@ -12,6 +12,19 @@ pub struct SummaryStats {
     pub authors: usize,
 }
 
+pub fn filter_deleted<V>(files: HashMap<String, V>, commits: &[CommitInfo]) -> HashMap<String, V> {
+    let file_statuses = get_file_statuses(commits);
+    files
+        .into_iter()
+        .filter(|p| {
+            *file_statuses
+                .get(&p.0)
+                .expect("mismatch between file status and other hashmap")
+                != FileStatus::Deleted
+        })
+        .collect::<HashMap<String, V>>()
+}
+
 pub fn get_summary(commits: &[CommitInfo]) -> SummaryStats {
     let files = get_file_statuses(commits)
         .iter()

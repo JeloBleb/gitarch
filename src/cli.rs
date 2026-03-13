@@ -17,9 +17,16 @@ pub enum Commands {
     Coupling {
         #[arg(long, default_value_t = 20)]
         max_changeset_size: usize,
+        #[arg(long, default_value_t = 15)]
+        coupling_percentage: usize,
     },
     Communication,
     Ownership,
     Decay,
-    Churn,
+    Churn {
+        #[arg(long)]
+        since: Option<chrono::NaiveDate>,
+        #[arg(long)]
+        until: Option<chrono::NaiveDate>,
+    },
 }

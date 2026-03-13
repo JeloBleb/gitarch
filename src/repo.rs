@@ -10,6 +10,7 @@ pub enum RepoError {
     Git(#[from] git2::Error),
 }
 
+#[derive(Clone)]
 pub struct CommitInfo {
     pub hash: String,
     pub author_name: String,
@@ -19,6 +20,7 @@ pub struct CommitInfo {
     pub file_changes: Vec<FileChange>,
 }
 
+#[derive(Clone)]
 pub struct FileChange {
     pub path: String,
     pub status: FileStatus,
