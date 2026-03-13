@@ -109,6 +109,7 @@ pub fn print_coupling(
             file_statuses.get(&p.0.0) != Some(&FileStatus::Deleted)
                 && file_statuses.get(&p.0.1) != Some(&FileStatus::Deleted)
         })
+        .sorted_by(|(_, coupling1), (_, coupling2)| coupling2.cmp(coupling1))
         .map(|(file_pair, count)| CouplingEntry { file_pair, count });
 
     if json_out {
@@ -132,6 +133,7 @@ pub fn print_owners(commits: &[CommitInfo], json_out: bool) {
     let owners = get_primary_owners(&get_owners(commits));
     let owners = filter_deleted(owners, commits)
         .into_iter()
+        .sorted_by(|a, b| a.0.cmp(&b.0))
         .map(|(file, owner)| OwnershipEntry { file, owner });
 
     if json_out {
@@ -152,6 +154,7 @@ pub fn print_communication(commits: &[CommitInfo], json_out: bool) {
     let owner_coupling = get_owner_coupling(commits);
     let owner_coupling = owner_coupling
         .into_iter()
+        .sorted_by(|(_, coupling1), (_, coupling2)| coupling2.cmp(coupling1))
         .map(|(owner_pair, count)| CommunicationEntry { owner_pair, count });
 
     if json_out {
@@ -192,7 +195,9 @@ pub fn print_churn(
         .collect();
 
     let line_changes = get_line_changes(&commits);
-    let line_changes = filter_deleted(line_changes, &commits);
+    let line_changes = filter_deleted(line_changes, &commits)
+        .into_iter()
+        .sorted_by(|(file, _), (file2, _)| file.cmp(file2));
     let revisions = get_revision_counts(&commits);
 
     let mut churn_entries: Vec<ChurnEntry> = Vec::new();
