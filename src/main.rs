@@ -31,7 +31,9 @@ fn main() -> anyhow::Result<()> {
 
     match command.command_type {
         Commands::Summary => print_summary(&filtered_commits, command.json),
-        Commands::Decay => print_decay(&filtered_commits, command.json),
+        Commands::Decay { decay_threshold } => {
+            print_decay(&filtered_commits, decay_threshold, command.json)
+        }
         Commands::Coupling {
             max_changeset_size,
             coupling_percentage,

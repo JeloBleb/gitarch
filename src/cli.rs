@@ -26,6 +26,9 @@ pub enum Commands {
     },
     Communication,
     Ownership,
-    Decay,
+    Decay {
+        #[arg(long, default_value_t = 180)]
+        decay_threshold: i64,
+    },
     Churn,
 }

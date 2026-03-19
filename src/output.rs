@@ -64,8 +64,8 @@ pub fn print_summary(commits: &[CommitInfo], json_out: bool) {
     }
 }
 
-pub fn print_decay(commits: &[CommitInfo], json_out: bool) {
-    let decay = get_decay(commits);
+pub fn print_decay(commits: &[CommitInfo], decay_threshold: i64, json_out: bool) {
+    let decay = get_decay(commits, decay_threshold);
     let decay = filter_deleted(decay, commits);
     let decay = decay
         .into_iter()

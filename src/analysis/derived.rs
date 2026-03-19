@@ -4,12 +4,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::analysis::metrics::*;
 
-const DECAY_THRESHOLD: i64 = 180 * 24 * 60 * 60;
-const STALENESS_WEIGHT: f64 = 0.3;
-const INACTIVITY_WEIGHT: f64 = 0.7;
+const DAYS_TO_SECONDS: i64 = 24 * 60 * 60;
 
-pub fn get_decay(commits: &[CommitInfo]) -> HashMap<String, f64> {
+pub fn get_decay(commits: &[CommitInfo], decay_threshold: i64) -> HashMap<String, f64> {
     let mut file_decays: HashMap<String, f64> = HashMap::new();
+    let decay_threshold = decay_threshold * DAYS_TO_SECONDS;
 
     let time = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -28,10 +27,9 @@ pub fn get_decay(commits: &[CommitInfo]) -> HashMap<String, f64> {
         let concentration = file_concentrations.get(path).unwrap();
         let user_last_active = users_last_active.get(primary_owner).unwrap();
 
-        let staleness = ((time - last_modified) as f64 / DECAY_THRESHOLD as f64).min(1.0);
-        let inactivity = ((time - user_last_active) as f64 / DECAY_THRESHOLD as f64).min(1.0);
-        let decay = (STALENESS_WEIGHT * staleness + INACTIVITY_WEIGHT * inactivity * concentration)
-            .min(1.0);
+        let staleness = ((time - last_modified) as f64 / decay_threshold as f64).min(1.0);
+        let inactivity = ((time - user_last_active) as f64 / decay_threshold as f64).min(1.0);
+        let decay = (0.7 * staleness + 0.3 * inactivity * concentration).min(1.0);
 
         file_decays.insert(path.clone(), decay);
     }
