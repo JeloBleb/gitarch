@@ -79,6 +79,7 @@ pub fn print_decay(commits: &[CommitInfo], decay_threshold: i64, json_out: bool)
         let mut table = Table::new().headers(&["File", "Decay Score"]);
 
         for DecayEntry { file, score } in decay {
+            let score = (score * 100.0).round() / 100.0;
             table = table.row(&[&file, &score.to_string()]);
         }
 

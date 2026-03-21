@@ -43,8 +43,12 @@ newcomer.
 - **Authors per file** -- distinct contributor count per file
 - **Summary** -- repo-wide stats (total commits, files, authors)
 
-### Planned
+### Additional analyses
 - **Communication** -- developer coupling inferred from shared file ownership
+
+### Planned
+- **`--top N` / `--limit`** -- limit output to the top N results
+- **`--path` filter** -- scope any analysis to a subdirectory or glob pattern
 - **Evolution** -- structural event detection (file births, deaths, renames)
 - **Health** -- aggregate project health score combining all analyses
 - **Architectural grouping** -- aggregate file-level analyses to logical
@@ -53,22 +57,36 @@ newcomer.
 ## Usage
 
 ```bash
-gitarch summary .
-gitarch ownership .
-gitarch coupling .
-gitarch decay .
+gitarch summary                        # repo-wide stats
+gitarch ownership                      # primary owner per file
+gitarch coupling                       # co-change pairs
+gitarch decay                          # composite decay scores
+gitarch churn                          # lines added/deleted per file
+gitarch communication                  # developer coupling via shared files
 ```
 
-Pass `--repo <path>` to analyze a different repository (defaults to `.`).
-`--json` flag for machine-readable output (planned).
+### Global flags
+- `--repo <path>` -- analyze a different repository (defaults to `.`)
+- `--json` -- machine-readable JSON output
+- `--since <YYYY-MM-DD>` -- only include commits from this date onward
+- `--until <YYYY-MM-DD>` -- only include commits up to this date
+
+### Subcommand flags
+- `coupling --max-changeset-size <N>` -- ignore commits touching more than N
+  files (default: 20)
+- `coupling --coupling-percentage <N>` -- minimum coupling percentage to
+  display (default: 15)
+- `decay --decay-threshold <DAYS>` -- number of days until a file is
+  considered fully stale (default: 180)
 
 ## Architecture
 
 ```
 src/
-  main.rs           # clap CLI entry point + output formatting
+  main.rs           # clap CLI entry point
   cli.rs            # subcommand definitions (clap derive structs)
   repo.rs           # git2 data access layer
+  output.rs         # table + JSON output formatting
   analysis/
     metrics.rs      # raw data extraction (ownership, coupling, counts, timestamps, churn)
     derived.rs      # derived analysis (decay scoring, file concentration)
@@ -84,7 +102,8 @@ Data flow: `git2 repo -> Vec<CommitInfo> -> metrics -> derived analysis -> outpu
 - **thiserror** -- typed errors in library code
 - **anyhow** -- error handling in CLI layer
 - **itertools** -- combinatorics for coupling analysis
-- **serde** -- JSON serialization for output (planned)
+- **serde** + **serde_json** -- JSON serialization for output
+- **chrono** -- date parsing and formatting
 - **rayon** -- parallel analysis (planned)
 
 ## Build Order
@@ -95,12 +114,15 @@ Data flow: `git2 repo -> Vec<CommitInfo> -> metrics -> derived analysis -> outpu
 4. ~~Decay -- composite decay scoring~~
 5. ~~Module reorganization (metrics.rs + derived.rs)~~
 6. ~~CLI wiring + terminal table output~~
-7. Output improvements (sorting, filtering deleted files, noise reduction)
-8. JSON output
-9. Communication -- developer coupling
-10. Evolution -- structural event detection
-11. Health -- aggregate project health
-12. Tests
+7. ~~Output improvements (sorting, filtering deleted files, noise reduction)~~
+8. ~~JSON output~~
+9. ~~Communication -- developer coupling~~
+10. ~~Global `--since` / `--until` date filters~~
+11. ~~Decay `--decay-threshold` flag~~
+12. CLI QoL -- help text, `--top N`, `--path` filter, error messages
+13. Evolution -- structural event detection
+14. Health -- aggregate project health
+15. Tests
 
 ## References
 

@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
+#[command(version)]
 pub struct Cli {
     #[arg(short, long, default_value = ".")]
     pub repo: PathBuf,

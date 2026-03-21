@@ -3,6 +3,7 @@ mod cli;
 mod output;
 mod repo;
 
+use anyhow::Context;
 use output::*;
 
 use chrono::{DateTime, NaiveDate};
@@ -13,10 +14,17 @@ use crate::{
 };
 
 use clap::Parser;
-fn main() -> anyhow::Result<()> {
+fn main() {
+    if let Err(e) = run() {
+        eprintln!("error: {e}");
+        std::process::exit(1);
+    }
+}
+
+fn run() -> anyhow::Result<()> {
     let command = Cli::parse();
 
-    let commits = parse_commit_info(&command.repo)?;
+    let commits = parse_commit_info(&command.repo).context("Failed to read respository")?;
 
     let filtered_commits: Vec<CommitInfo> = commits
         .iter()
@@ -38,7 +46,7 @@ fn main() -> anyhow::Result<()> {
             max_changeset_size,
             coupling_percentage,
         } => print_coupling(
-            &commits,
+            &filtered_commits,
             max_changeset_size,
             coupling_percentage,
             command.json,

@@ -41,9 +41,10 @@ cargo fmt                          # format
 
 ```
 src/
-  main.rs           # clap CLI entry point + output formatting
+  main.rs           # clap CLI entry point
   cli.rs            # subcommand definitions (clap derive structs)
   repo.rs           # git2 data access layer
+  output.rs         # table + JSON output formatting
   analysis/         # core logic -- independent of output formatting
     metrics.rs      # raw data extraction (ownership, coupling, counts, timestamps, churn)
     derived.rs      # derived analysis (decay scoring, file concentration)
