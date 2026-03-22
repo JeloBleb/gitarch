@@ -47,12 +47,13 @@ newcomer.
 - **Communication** -- developer coupling inferred from shared file ownership
 
 ### Planned
+- **Hotspots** -- files ranked by revision count (change frequency)
+- **Authors per file** -- distinct contributor count per file (bus factor)
+- **Detailed ownership** -- full author breakdown per file, not just primary
+- **Author summary** -- per-author stats (files owned, last active, commit count)
+- **Age** -- file creation and last modified dates
 - **`--top N` / `--limit`** -- limit output to the top N results
 - **`--path` filter** -- scope any analysis to a subdirectory or glob pattern
-- **Evolution** -- structural event detection (file births, deaths, renames)
-- **Health** -- aggregate project health score combining all analyses
-- **Architectural grouping** -- aggregate file-level analyses to logical
-  component level via regex mapping
 
 ## Usage
 
@@ -119,10 +120,13 @@ Data flow: `git2 repo -> Vec<CommitInfo> -> metrics -> derived analysis -> outpu
 9. ~~Communication -- developer coupling~~
 10. ~~Global `--since` / `--until` date filters~~
 11. ~~Decay `--decay-threshold` flag~~
-12. CLI QoL -- help text, `--top N`, `--path` filter, error messages
-13. Evolution -- structural event detection
-14. Health -- aggregate project health
-15. Tests
+12. ~~`--version` flag~~
+13. ~~Error handling -- `run()` pattern, `.context()` for user-friendly messages~~
+14. ~~Decay score rounding in table output~~
+15. Coupling percentage display in output
+16. New subcommands -- hotspots, authors-per-file, detailed ownership, author summary, age
+17. CLI QoL -- help text, `--top N`, `--path` filter
+18. Tests
 
 ## References
 

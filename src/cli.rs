@@ -8,12 +8,8 @@ pub struct Cli {
     pub repo: PathBuf,
     #[command(subcommand)]
     pub command_type: Commands,
-    #[arg(long)]
-    pub json: bool,
-    #[arg(long)]
-    pub since: Option<chrono::NaiveDate>,
-    #[arg(long)]
-    pub until: Option<chrono::NaiveDate>,
+    #[command(flatten)]
+    pub config: OutputConfig,
 }
 
 #[derive(Subcommand, Debug)]
@@ -32,4 +28,16 @@ pub enum Commands {
         decay_threshold: i64,
     },
     Churn,
+}
+
+#[derive(Debug, Parser)]
+pub struct OutputConfig {
+    #[arg(long)]
+    pub json: bool,
+    #[arg(long)]
+    pub top: Option<usize>,
+    #[arg(long)]
+    pub since: Option<chrono::NaiveDate>,
+    #[arg(long)]
+    pub until: Option<chrono::NaiveDate>,
 }

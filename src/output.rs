@@ -38,10 +38,10 @@ struct ChurnEntry {
     created: NaiveDate,
     last_modified: NaiveDate,
 }
-pub fn print_summary(commits: &[CommitInfo], json_out: bool) {
+pub fn print_summary(commits: &[CommitInfo], config: OutputConfig) {
     let summary = get_summary(commits);
 
-    if json_out {
+    if config.json {
         let json = to_string_pretty(&summary).unwrap();
         println!("{json}");
     } else {
@@ -64,15 +64,16 @@ pub fn print_summary(commits: &[CommitInfo], json_out: bool) {
     }
 }
 
-pub fn print_decay(commits: &[CommitInfo], decay_threshold: i64, json_out: bool) {
+pub fn print_decay(commits: &[CommitInfo], decay_threshold: i64, config: OutputConfig) {
     let decay = get_decay(commits, decay_threshold);
     let decay = filter_deleted(decay, commits);
     let decay = decay
         .into_iter()
         .map(|(file, score)| DecayEntry { file, score })
-        .sorted_by(|a, b| b.score.total_cmp(&a.score));
+        .sorted_by(|a, b| b.score.total_cmp(&a.score))
+        .take(config.top.unwrap_or(usize::MAX));
 
-    if json_out {
+    if config.json {
         let json = to_string_pretty(&decay.collect::<Vec<DecayEntry>>()).unwrap();
         println!("{json}");
     } else {
@@ -91,7 +92,7 @@ pub fn print_coupling(
     commits: &[CommitInfo],
     max_changeset_size: usize,
     coupling_percent: usize,
-    json_out: bool,
+    config: OutputConfig,
 ) {
     let coupling = get_coupling(commits, max_changeset_size);
     let revisions = get_revision_counts(commits);
@@ -110,9 +111,10 @@ pub fn print_coupling(
                 && file_statuses.get(&p.0.1) != Some(&FileStatus::Deleted)
         })
         .sorted_by(|(_, coupling1), (_, coupling2)| coupling2.cmp(coupling1))
-        .map(|(file_pair, count)| CouplingEntry { file_pair, count });
+        .map(|(file_pair, count)| CouplingEntry { file_pair, count })
+        .take(config.top.unwrap_or(usize::MAX));
 
-    if json_out {
+    if config.json {
         let json = serde_json::to_string_pretty(&coupling.collect::<Vec<CouplingEntry>>()).unwrap();
         println!("{json}");
     } else {
@@ -129,14 +131,15 @@ pub fn print_coupling(
     }
 }
 
-pub fn print_owners(commits: &[CommitInfo], json_out: bool) {
+pub fn print_owners(commits: &[CommitInfo], config: OutputConfig) {
     let owners = get_primary_owners(&get_owners(commits));
     let owners = filter_deleted(owners, commits)
         .into_iter()
         .sorted_by(|a, b| a.0.cmp(&b.0))
-        .map(|(file, owner)| OwnershipEntry { file, owner });
+        .map(|(file, owner)| OwnershipEntry { file, owner })
+        .take(config.top.unwrap_or(usize::MAX));
 
-    if json_out {
+    if config.json {
         let json = to_string_pretty(&owners.collect::<Vec<OwnershipEntry>>()).unwrap();
         println!("{json}");
     } else {
@@ -150,14 +153,15 @@ pub fn print_owners(commits: &[CommitInfo], json_out: bool) {
     }
 }
 
-pub fn print_communication(commits: &[CommitInfo], json_out: bool) {
+pub fn print_communication(commits: &[CommitInfo], config: OutputConfig) {
     let owner_coupling = get_owner_coupling(commits);
     let owner_coupling = owner_coupling
         .into_iter()
         .sorted_by(|(_, coupling1), (_, coupling2)| coupling2.cmp(coupling1))
-        .map(|(owner_pair, count)| CommunicationEntry { owner_pair, count });
+        .map(|(owner_pair, count)| CommunicationEntry { owner_pair, count })
+        .take(config.top.unwrap_or(usize::MAX));
 
-    if json_out {
+    if config.json {
         let json = to_string_pretty(&owner_coupling.collect::<Vec<CommunicationEntry>>()).unwrap();
         println!("{json}");
     } else {
@@ -174,14 +178,15 @@ pub fn print_communication(commits: &[CommitInfo], json_out: bool) {
     }
 }
 
-pub fn print_churn(commits: &[CommitInfo], filtered_commits: &[CommitInfo], json_out: bool) {
+pub fn print_churn(commits: &[CommitInfo], filtered_commits: &[CommitInfo], config: OutputConfig) {
     let last_modified = get_files_last_modified(commits);
     let created = get_files_creation(commits);
 
     let line_changes = get_line_changes(filtered_commits);
     let line_changes = filter_deleted(line_changes, commits)
         .into_iter()
-        .sorted_by(|(file, _), (file2, _)| file.cmp(file2));
+        .sorted_by(|(file, _), (file2, _)| file.cmp(file2))
+        .take(config.top.unwrap_or(usize::MAX));
     let revisions = get_revision_counts(filtered_commits);
 
     let mut churn_entries: Vec<ChurnEntry> = Vec::new();
@@ -204,7 +209,7 @@ pub fn print_churn(commits: &[CommitInfo], filtered_commits: &[CommitInfo], json
         });
     }
 
-    if json_out {
+    if config.json {
         let json = to_string_pretty(&churn_entries).unwrap();
         println!("{json}");
     } else {
