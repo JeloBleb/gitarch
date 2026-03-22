@@ -58,3 +58,29 @@ pub fn get_file_concentrations(
 
     files
 }
+
+pub fn get_coupling_percentage(
+    commits: &[CommitInfo],
+    max_changeset_size: usize,
+    min_revision: usize,
+) -> HashMap<(String, String), f64> {
+    let mut coupling_percentages: HashMap<(String, String), f64> = HashMap::new();
+
+    let couplings = get_coupling(commits, max_changeset_size);
+    let modifications = get_revision_counts(commits);
+
+    for ((file1, file2), count) in couplings {
+        let rev1 = *modifications.get(&file1).expect("expected file in hashmap");
+        let rev2 = *modifications.get(&file2).expect("expected file in hashmap");
+
+        if rev1 < min_revision || rev2 < min_revision {
+            continue;
+        }
+
+        let percentage = count as f64 / rev1.min(rev2) as f64;
+
+        coupling_percentages.insert((file1.clone(), file2.clone()), percentage);
+    }
+
+    coupling_percentages
+}

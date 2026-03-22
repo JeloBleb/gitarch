@@ -43,11 +43,13 @@ fn run() -> anyhow::Result<()> {
         }
         Commands::Coupling {
             max_changeset_size,
-            coupling_percentage,
+            min_coupling_percentage,
+            min_revision_count,
         } => print_coupling(
             &filtered_commits,
             max_changeset_size,
-            coupling_percentage,
+            min_coupling_percentage,
+            min_revision_count,
             config,
         ),
         Commands::Ownership => print_owners(&filtered_commits, config),

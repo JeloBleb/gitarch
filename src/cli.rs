@@ -19,7 +19,9 @@ pub enum Commands {
         #[arg(long, default_value_t = 20)]
         max_changeset_size: usize,
         #[arg(long, default_value_t = 15)]
-        coupling_percentage: usize,
+        min_coupling_percentage: usize,
+        #[arg(long, default_value_t = 5)]
+        min_revision_count: usize,
     },
     Communication,
     Ownership,

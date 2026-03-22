@@ -14,7 +14,7 @@ struct DecayEntry {
 #[derive(Serialize)]
 struct CouplingEntry {
     file_pair: (String, String),
-    count: usize,
+    percent: f64,
 }
 
 #[derive(Serialize)]
@@ -91,27 +91,23 @@ pub fn print_decay(commits: &[CommitInfo], decay_threshold: i64, config: OutputC
 pub fn print_coupling(
     commits: &[CommitInfo],
     max_changeset_size: usize,
-    coupling_percent: usize,
+    min_coupling_percent: usize,
+    min_revision_count: usize,
     config: OutputConfig,
 ) {
-    let coupling = get_coupling(commits, max_changeset_size);
-    let revisions = get_revision_counts(commits);
+    let coupling = get_coupling_percentage(commits, max_changeset_size, min_revision_count);
 
     let file_statuses = get_file_statuses(commits);
 
     let coupling = coupling
         .into_iter()
-        .filter(|p| {
-            p.1 > ((revisions.get(&p.0.0).unwrap() + revisions.get(&p.0.1).unwrap()) / 2
-                * coupling_percent
-                / 100)
-        })
+        .filter(|p| p.1 > min_coupling_percent as f64 / 100.0)
         .filter(|p| {
             file_statuses.get(&p.0.0) != Some(&FileStatus::Deleted)
                 && file_statuses.get(&p.0.1) != Some(&FileStatus::Deleted)
         })
-        .sorted_by(|(_, coupling1), (_, coupling2)| coupling2.cmp(coupling1))
-        .map(|(file_pair, count)| CouplingEntry { file_pair, count })
+        .sorted_by(|a, b| b.1.total_cmp(&a.1))
+        .map(|(file_pair, percent)| CouplingEntry { file_pair, percent })
         .take(config.top.unwrap_or(usize::MAX));
 
     if config.json {
@@ -120,10 +116,10 @@ pub fn print_coupling(
     } else {
         let mut table = Table::new().headers(&["File Pair", "Coupling"]);
 
-        for CouplingEntry { file_pair, count } in coupling {
+        for CouplingEntry { file_pair, percent } in coupling {
             table = table.row(&[
                 &format!("{} and {}", file_pair.0, file_pair.1),
-                &count.to_string(),
+                &format!("{}%", (percent * 100.0).round()),
             ])
         }
 
