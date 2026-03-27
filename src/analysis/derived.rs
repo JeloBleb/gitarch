@@ -1,10 +1,23 @@
-use crate::repo::CommitInfo;
+use crate::*;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::analysis::metrics::*;
 
 const DAYS_TO_SECONDS: i64 = 24 * 60 * 60;
+
+pub fn filter_deleted<V>(files: HashMap<String, V>, commits: &[CommitInfo]) -> HashMap<String, V> {
+    let file_statuses = get_file_statuses(commits);
+    files
+        .into_iter()
+        .filter(|p| {
+            *file_statuses
+                .get(&p.0)
+                .expect("mismatch between file status and other hashmap")
+                != FileStatus::Deleted
+        })
+        .collect::<HashMap<String, V>>()
+}
 
 pub fn get_decay(commits: &[CommitInfo], decay_threshold: i64) -> HashMap<String, f64> {
     let mut file_decays: HashMap<String, f64> = HashMap::new();

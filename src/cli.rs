@@ -42,4 +42,10 @@ pub struct OutputConfig {
     pub since: Option<chrono::NaiveDate>,
     #[arg(long)]
     pub until: Option<chrono::NaiveDate>,
+    #[arg(long)]
+    pub path: Option<String>,
+    #[arg(long)]
+    pub include: Vec<String>,
+    #[arg(long)]
+    pub exclude: Vec<String>,
 }

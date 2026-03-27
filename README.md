@@ -52,8 +52,8 @@ newcomer.
 - **Detailed ownership** -- full author breakdown per file, not just primary
 - **Author summary** -- per-author stats (files owned, last active, commit count)
 - **Age** -- file creation and last modified dates
-- **`--top N` / `--limit`** -- limit output to the top N results
-- **`--path` filter** -- scope any analysis to a subdirectory or glob pattern
+- **`--path` filter** -- scope any analysis to a subdirectory
+- **`--include` / `--exclude`** -- glob-based file filtering
 
 ## Usage
 
@@ -69,14 +69,17 @@ gitarch communication                  # developer coupling via shared files
 ### Global flags
 - `--repo <path>` -- analyze a different repository (defaults to `.`)
 - `--json` -- machine-readable JSON output
+- `--top <N>` -- limit output to the top N results
 - `--since <YYYY-MM-DD>` -- only include commits from this date onward
 - `--until <YYYY-MM-DD>` -- only include commits up to this date
 
 ### Subcommand flags
 - `coupling --max-changeset-size <N>` -- ignore commits touching more than N
   files (default: 20)
-- `coupling --coupling-percentage <N>` -- minimum coupling percentage to
+- `coupling --min-coupling-percentage <N>` -- minimum coupling percentage to
   display (default: 15)
+- `coupling --min-revision-count <N>` -- minimum number of revisions for a
+  file to be included in coupling analysis (default: 5)
 - `decay --decay-threshold <DAYS>` -- number of days until a file is
   considered fully stale (default: 180)
 
@@ -123,10 +126,11 @@ Data flow: `git2 repo -> Vec<CommitInfo> -> metrics -> derived analysis -> outpu
 12. ~~`--version` flag~~
 13. ~~Error handling -- `run()` pattern, `.context()` for user-friendly messages~~
 14. ~~Decay score rounding in table output~~
-15. Coupling percentage display in output
-16. New subcommands -- hotspots, authors-per-file, detailed ownership, author summary, age
-17. CLI QoL -- help text, `--top N`, `--path` filter
-18. Tests
+15. ~~Coupling percentage display + `--min-coupling-percentage` and `--min-revision-count` flags~~
+16. ~~`--top N` flag~~
+17. New subcommands -- hotspots, authors-per-file, detailed ownership, author summary, age
+18. CLI QoL -- help text, `--path` filter, `--include`/`--exclude` glob filtering
+19. Tests
 
 ## References
 
