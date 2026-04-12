@@ -56,6 +56,7 @@ fn run() -> anyhow::Result<()> {
         Commands::Ownership => print_owners(&filtered_commits, config),
         Commands::Communication => print_communication(&filtered_commits, config),
         Commands::Churn => print_churn(&commits, &filtered_commits, config),
+        Commands::OwnerSummary => print_owner_summary(&filtered_commits, config),
     };
 
     Ok(())

@@ -47,13 +47,9 @@ newcomer.
 - **Communication** -- developer coupling inferred from shared file ownership
 
 ### Planned
-- **Hotspots** -- files ranked by revision count (change frequency)
+- **Author summary** -- per-author stats (files owned, last active, commit count)
 - **Authors per file** -- distinct contributor count per file (bus factor)
 - **Detailed ownership** -- full author breakdown per file, not just primary
-- **Author summary** -- per-author stats (files owned, last active, commit count)
-- **Age** -- file creation and last modified dates
-- **`--path` filter** -- scope any analysis to a subdirectory
-- **`--include` / `--exclude`** -- glob-based file filtering
 
 ## Usage
 
@@ -72,6 +68,9 @@ gitarch communication                  # developer coupling via shared files
 - `--top <N>` -- limit output to the top N results
 - `--since <YYYY-MM-DD>` -- only include commits from this date onward
 - `--until <YYYY-MM-DD>` -- only include commits up to this date
+- `--path <dir>` -- scope analysis to a subdirectory
+- `--include <pattern>` -- only include files matching suffix (e.g. `.rs`); repeatable
+- `--exclude <pattern>` -- exclude files matching suffix; repeatable
 
 ### Subcommand flags
 - `coupling --max-changeset-size <N>` -- ignore commits touching more than N
@@ -128,8 +127,8 @@ Data flow: `git2 repo -> Vec<CommitInfo> -> metrics -> derived analysis -> outpu
 14. ~~Decay score rounding in table output~~
 15. ~~Coupling percentage display + `--min-coupling-percentage` and `--min-revision-count` flags~~
 16. ~~`--top N` flag~~
-17. New subcommands -- hotspots, authors-per-file, detailed ownership, author summary, age
-18. CLI QoL -- help text, `--path` filter, `--include`/`--exclude` glob filtering
+17. New subcommands -- authors-per-file, detailed ownership, author summary
+18. ~~`--path` filter, `--include`/`--exclude` file filtering~~
 19. Tests
 
 ## References

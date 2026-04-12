@@ -64,6 +64,28 @@ pub fn print_summary(commits: &[CommitInfo], config: OutputConfig) {
     }
 }
 
+pub fn print_owner_summary(commits: &[CommitInfo], config: OutputConfig) {
+    let owner_summaries = get_owner_summary(commits);
+
+    if config.json {
+        let json = to_string_pretty(&owner_summaries).unwrap();
+        println!("{json}");
+    } else {
+        let mut table =
+            Table::new().headers(&["Author", "Files Touched", "File Changes", "Line Revisions"]);
+        for (name, stats) in owner_summaries {
+            table = table.row(&[
+                &name,
+                &stats.files.len().to_string(),
+                &stats.file_changes.to_string(),
+                &stats.revisions.to_string(),
+            ]);
+        }
+
+        table.print();
+    }
+}
+
 pub fn print_decay(commits: &[CommitInfo], decay_threshold: i64, config: OutputConfig) {
     let decay = get_decay(commits, decay_threshold);
     let decay = filter_deleted(decay, commits);

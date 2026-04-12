@@ -30,6 +30,7 @@ pub enum Commands {
         decay_threshold: i64,
     },
     Churn,
+    OwnerSummary,
 }
 
 #[derive(Debug, Parser, Clone)]

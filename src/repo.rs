@@ -114,7 +114,8 @@ pub fn parse_commit_info(
             .into_iter()
             .filter(|(path, _)| {
                 directory_path.is_none_or(|p| path.starts_with(p))
-                    && config.include.iter().any(|p| path.ends_with(p))
+                    && (config.include.is_empty()
+                        || config.include.iter().any(|p| path.ends_with(p)))
                     && !config.exclude.iter().any(|p| path.ends_with(p))
             })
             .map(|(path, (status, insertions, deletions))| FileChange {

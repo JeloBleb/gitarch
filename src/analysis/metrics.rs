@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::repo::{CommitInfo, FileStatus};
 use itertools::Itertools;
@@ -12,13 +12,21 @@ pub struct SummaryStats {
     pub authors: usize,
 }
 
+#[derive(Debug, Serialize, Default)]
+pub struct OwnerStats {
+    pub commits: usize,
+    pub file_changes: usize,
+    pub files: HashSet<String>,
+    pub revisions: usize,
+}
+
 pub fn get_summary(commits: &[CommitInfo]) -> SummaryStats {
     let files = get_file_statuses(commits)
         .iter()
         .filter(|p| *p.1 != FileStatus::Deleted)
         .count();
 
-    let file_changes = commits.iter().map(|p| p.file_changes.len()).sum();
+    let files_modified = commits.iter().map(|p| p.file_changes.len()).sum();
 
     let authors = get_user_last_active(commits).len();
 
@@ -27,9 +35,30 @@ pub fn get_summary(commits: &[CommitInfo]) -> SummaryStats {
     SummaryStats {
         commits,
         files,
-        file_changes,
+        file_changes: files_modified,
         authors,
     }
+}
+
+pub fn get_owner_summary(commits: &[CommitInfo]) -> HashMap<String, OwnerStats> {
+    let mut authors: HashMap<String, OwnerStats> = HashMap::new();
+
+    for commit in commits {
+        let entry = authors.entry(commit.author_name.clone()).or_default();
+        entry.commits += 1;
+        entry.file_changes += commit.file_changes.len();
+        entry.revisions += commit
+            .file_changes
+            .iter()
+            .map(|p| p.deletions + p.insertions)
+            .sum::<usize>();
+
+        for file in &commit.file_changes {
+            entry.files.insert(file.path.clone());
+        }
+    }
+
+    authors
 }
 
 pub fn get_file_statuses(commits: &[CommitInfo]) -> HashMap<String, FileStatus> {
