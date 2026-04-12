@@ -23,8 +23,8 @@ fn run() -> anyhow::Result<()> {
 
     let config = command.config;
 
-    let commits = parse_commit_info(&command.repo, config.path.clone())
-        .context("Failed to read respository")?;
+    let commits =
+        parse_commit_info(&command.repo, config.clone()).context("Failed to read respository")?;
 
     let filtered_commits: Vec<CommitInfo> = commits
         .iter()

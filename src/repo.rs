@@ -1,3 +1,4 @@
+use crate::*;
 use std::{collections::HashMap, path::Path, result::Result};
 
 use git2::{Delta, Repository};
@@ -53,7 +54,7 @@ impl From<Delta> for FileStatus {
 
 pub fn parse_commit_info(
     repo_path: &Path,
-    directory_path: Option<String>,
+    config: OutputConfig,
 ) -> Result<Vec<CommitInfo>, RepoError> {
     let repo = Repository::discover(repo_path)?;
     let mut commits: Vec<CommitInfo> = Vec::new();
@@ -106,12 +107,16 @@ pub fn parse_commit_info(
             }),
         )?;
 
-        let directory_path = directory_path.as_deref();
+        let directory_path = config.path.as_deref();
 
         let file_changes: Vec<_> = file_changes
             .into_inner()
             .into_iter()
-            .filter(|(path, _)| directory_path.map_or(true, |p| path.starts_with(&p)))
+            .filter(|(path, _)| {
+                directory_path.is_none_or(|p| path.starts_with(p))
+                    && config.include.iter().any(|p| path.ends_with(p))
+                    && !config.exclude.iter().any(|p| path.ends_with(p))
+            })
             .map(|(path, (status, insertions, deletions))| FileChange {
                 path,
                 status,

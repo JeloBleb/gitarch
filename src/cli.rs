@@ -32,7 +32,7 @@ pub enum Commands {
     Churn,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Clone)]
 pub struct OutputConfig {
     #[arg(long)]
     pub json: bool,
