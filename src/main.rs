@@ -23,17 +23,18 @@ fn run() -> anyhow::Result<()> {
 
     let config = command.config;
 
-    let commits = parse_commit_info(&command.repo).context("Failed to read respository")?;
+    let commits = parse_commit_info(&command.repo, config.path.clone())
+        .context("Failed to read respository")?;
 
     let filtered_commits: Vec<CommitInfo> = commits
         .iter()
-        .filter(|commit| {
-            let date = DateTime::from_timestamp(commit.timestamp, 0)
-                .unwrap()
-                .date_naive();
-            config.since.is_none_or(|p| date >= p) && config.until.is_none_or(|p| date <= p)
-        })
         .cloned()
+        .filter_map(|commit| {
+            let date = DateTime::from_timestamp(commit.timestamp, 0)?.date_naive();
+            let in_range =
+                config.since.is_none_or(|p| date >= p) && config.until.is_none_or(|p| date <= p);
+            in_range.then_some(commit)
+        })
         .collect();
 
     match command.command_type {

@@ -51,8 +51,11 @@ impl From<Delta> for FileStatus {
     }
 }
 
-pub fn parse_commit_info(path: &Path) -> Result<Vec<CommitInfo>, RepoError> {
-    let repo = Repository::discover(path)?;
+pub fn parse_commit_info(
+    repo_path: &Path,
+    directory_path: Option<String>,
+) -> Result<Vec<CommitInfo>, RepoError> {
+    let repo = Repository::discover(repo_path)?;
     let mut commits: Vec<CommitInfo> = Vec::new();
 
     let mut revwalk = repo.revwalk()?;
@@ -103,9 +106,12 @@ pub fn parse_commit_info(path: &Path) -> Result<Vec<CommitInfo>, RepoError> {
             }),
         )?;
 
+        let directory_path = directory_path.as_deref();
+
         let file_changes: Vec<_> = file_changes
             .into_inner()
             .into_iter()
+            .filter(|(path, _)| directory_path.map_or(true, |p| path.starts_with(&p)))
             .map(|(path, (status, insertions, deletions))| FileChange {
                 path,
                 status,
