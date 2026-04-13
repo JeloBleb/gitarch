@@ -23,7 +23,12 @@ fn run() -> anyhow::Result<()> {
     let command = Cli::parse();
 
     if let Commands::Completions { shell } = &command.command_type {
-        generate(*shell, &mut Cli::command(), "gitarch", &mut std::io::stdout());
+        generate(
+            *shell,
+            &mut Cli::command(),
+            "gitarch",
+            &mut std::io::stdout(),
+        );
         return Ok(());
     }
 
@@ -44,9 +49,9 @@ fn run() -> anyhow::Result<()> {
         .collect();
 
     match command.command_type {
-        Commands::Summary => print_summary(&filtered_commits, config),
+        Commands::Summary => print_summary(&filtered_commits, config)?,
         Commands::Decay { decay_threshold } => {
-            print_decay(&filtered_commits, decay_threshold, config)
+            print_decay(&filtered_commits, decay_threshold, config)?
         }
         Commands::Coupling {
             max_changeset_size,
@@ -58,11 +63,11 @@ fn run() -> anyhow::Result<()> {
             min_coupling_percentage,
             min_revision_count,
             config,
-        ),
-        Commands::Ownership => print_owners(&filtered_commits, config),
-        Commands::Communication => print_communication(&filtered_commits, config),
-        Commands::Churn => print_churn(&commits, &filtered_commits, config),
-        Commands::OwnerSummary => print_owner_summary(&filtered_commits, config),
+        )?,
+        Commands::Ownership => print_owners(&filtered_commits, config)?,
+        Commands::Communication => print_communication(&filtered_commits, config)?,
+        Commands::Churn => print_churn(&commits, &filtered_commits, config)?,
+        Commands::OwnerSummary => print_owner_summary(&filtered_commits, config)?,
         Commands::Completions { .. } => unreachable!(),
     };
 

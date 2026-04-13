@@ -2,6 +2,13 @@ use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use std::path::PathBuf;
 
+#[derive(Clone, Debug, clap::ValueEnum)]
+pub enum Format {
+    Table,
+    Json,
+    Csv,
+}
+
 #[derive(Parser, Debug)]
 #[command(version)]
 pub struct Cli {
@@ -42,8 +49,8 @@ pub enum Commands {
 
 #[derive(Debug, Parser, Clone)]
 pub struct OutputConfig {
-    #[arg(long)]
-    pub json: bool,
+    #[arg(long, default_value = "table", value_enum)]
+    pub format: Format,
     #[arg(long)]
     pub top: Option<usize>,
     #[arg(long)]
