@@ -12,6 +12,7 @@ pub enum RepoError {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct CommitInfo {
     pub hash: String,
     pub author_name: String,
