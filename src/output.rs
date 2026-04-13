@@ -86,8 +86,12 @@ pub fn print_owner_summary(commits: &[CommitInfo], config: OutputConfig) -> anyh
             println!("{json}");
         }
         Format::Table => {
-            let mut table =
-                Table::new().headers(&["Author", "Files Touched", "File Changes", "Line Revisions"]);
+            let mut table = Table::new().headers(&[
+                "Author",
+                "Files Touched",
+                "File Changes",
+                "Line Revisions",
+            ]);
             for (name, stats) in owner_summaries {
                 table = table.row(&[
                     &name,
@@ -116,7 +120,11 @@ pub fn print_owner_summary(commits: &[CommitInfo], config: OutputConfig) -> anyh
     Ok(())
 }
 
-pub fn print_decay(commits: &[CommitInfo], decay_threshold: i64, config: OutputConfig) -> anyhow::Result<()> {
+pub fn print_decay(
+    commits: &[CommitInfo],
+    decay_threshold: i64,
+    config: OutputConfig,
+) -> anyhow::Result<()> {
     let decay = get_decay(commits, decay_threshold);
     let decay = filter_deleted(decay, commits);
     let decay = decay
@@ -169,17 +177,27 @@ pub fn print_coupling(
                 && file_statuses.get(&p.0.1) != Some(&FileStatus::Deleted)
         })
         .sorted_by(|a, b| b.1.total_cmp(&a.1))
-        .map(|((file_a, file_b), percent)| CouplingEntry { file_a, file_b, percent })
+        .map(|((file_a, file_b), percent)| CouplingEntry {
+            file_a,
+            file_b,
+            percent,
+        })
         .take(config.top.unwrap_or(usize::MAX));
 
     match config.format {
         Format::Json => {
-            let json = serde_json::to_string_pretty(&coupling.collect::<Vec<CouplingEntry>>()).unwrap();
+            let json =
+                serde_json::to_string_pretty(&coupling.collect::<Vec<CouplingEntry>>()).unwrap();
             println!("{json}");
         }
         Format::Table => {
             let mut table = Table::new().headers(&["File Pair", "Coupling"]);
-            for CouplingEntry { file_a, file_b, percent } in coupling {
+            for CouplingEntry {
+                file_a,
+                file_b,
+                percent,
+            } in coupling
+            {
                 table = table.row(&[
                     &format!("{} and {}", file_a, file_b),
                     &format!("{}%", (percent * 100.0).round()),
@@ -236,17 +254,27 @@ pub fn print_communication(commits: &[CommitInfo], config: OutputConfig) -> anyh
     let owner_coupling = owner_coupling
         .into_iter()
         .sorted_by(|(_, coupling1), (_, coupling2)| coupling2.cmp(coupling1))
-        .map(|((author_a, author_b), count)| CommunicationEntry { author_a, author_b, count })
+        .map(|((author_a, author_b), count)| CommunicationEntry {
+            author_a,
+            author_b,
+            count,
+        })
         .take(config.top.unwrap_or(usize::MAX));
 
     match config.format {
         Format::Json => {
-            let json = to_string_pretty(&owner_coupling.collect::<Vec<CommunicationEntry>>()).unwrap();
+            let json =
+                to_string_pretty(&owner_coupling.collect::<Vec<CommunicationEntry>>()).unwrap();
             println!("{json}");
         }
         Format::Table => {
             let mut table = Table::new().headers(&["Owner Pair", "File Overlap"]);
-            for CommunicationEntry { author_a, author_b, count } in owner_coupling {
+            for CommunicationEntry {
+                author_a,
+                author_b,
+                count,
+            } in owner_coupling
+            {
                 table = table.row(&[
                     &format!("{} and {}", author_a, author_b),
                     &count.to_string(),
@@ -266,7 +294,11 @@ pub fn print_communication(commits: &[CommitInfo], config: OutputConfig) -> anyh
     Ok(())
 }
 
-pub fn print_churn(commits: &[CommitInfo], filtered_commits: &[CommitInfo], config: OutputConfig) -> anyhow::Result<()> {
+pub fn print_churn(
+    commits: &[CommitInfo],
+    filtered_commits: &[CommitInfo],
+    config: OutputConfig,
+) -> anyhow::Result<()> {
     let last_modified = get_files_last_modified(commits);
     let created = get_files_creation(commits);
 
