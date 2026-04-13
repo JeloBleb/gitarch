@@ -66,6 +66,10 @@ pub fn parse_commit_info(
         let hash = latest_commit_hash?;
         let commit = repo.find_commit(hash)?;
 
+        if config.no_merges && commit.parent_count() > 1 {
+            continue;
+        }
+
         let file_changes = RefCell::new(HashMap::new());
 
         let tree = commit.tree()?;

@@ -6,8 +6,8 @@
 A modern, streamlined replacement for
 [code-maat](https://github.com/adamtornhill/code-maat). Extracts implicit
 knowledge from git repository commit history -- ownership, coupling, decay,
-churn, and project health -- with structured JSON output designed for LLM
-consumption.
+churn, and project health -- with structured output (table, JSON, CSV)
+designed for LLM consumption and data analysis.
 
 ## Why gitarch?
 
@@ -111,15 +111,16 @@ $ gitarch --top 5 decay
 +-----------------+-------------+
 ```
 
-All commands support `--json` for machine-readable output:
+All commands support `--format json` and `--format csv` for machine-readable output:
 
 ```bash
-gitarch --json decay | jq '.[] | select(.score > 0.5)'
+gitarch --format json decay | jq '.[] | select(.score > 0.5)'
+gitarch --format csv churn > churn.csv
 ```
 
 ### Global flags
 - `--repo <path>` -- analyze a different repository (defaults to `.`)
-- `--json` -- machine-readable JSON output
+- `--format <table|json|csv>` -- output format (default: table)
 - `--top <N>` -- limit output to the top N results
 - `--since <YYYY-MM-DD>` -- only include commits from this date onward
 - `--until <YYYY-MM-DD>` -- only include commits up to this date
@@ -147,6 +148,37 @@ gitarch completions zsh > ~/.zfunc/_gitarch
 gitarch completions fish > ~/.config/fish/completions/gitarch.fish
 ```
 
+### LLM integration
+
+Pipe JSON output into an LLM for automated analysis:
+
+```bash
+# Find contribution opportunities in an unfamiliar repo
+gitarch --format json decay | \
+  cat - <(gitarch --format json ownership) | \
+  llm -s "Identify abandoned files with no active owner. Suggest safe places for a newcomer to contribute."
+
+# Code review prep -- find risky areas
+gitarch --format json coupling | \
+  llm -s "Which file pairs have dangerous coupling? What refactoring would reduce it?"
+
+# Works with any LLM CLI (llm, claude, aichat, etc.)
+gitarch --format json churn | claude -p "Summarize the hotspots in this repo."
+```
+
+## gitarch vs code-maat
+
+| | gitarch | code-maat |
+|---|---|---|
+| **Status** | Active, open source | Deprecated (moved to CodeScene) |
+| **Install** | Single binary (`cargo install`) | JVM + Clojure |
+| **Input** | Direct git2 repo access | Requires exported git log file |
+| **Decay scoring** | Built-in composite score | Not available |
+| **Output formats** | Table, JSON, CSV | CSV |
+| **LLM-ready** | Structured JSON output | Manual parsing needed |
+| **Filtering** | `--path`, `--include`, `--exclude`, `--since`, `--until` | Limited |
+| **Coupling** | Percentage-based with configurable thresholds | Raw counts only |
+
 ## Architecture
 
 ```
@@ -154,7 +186,7 @@ src/
   main.rs           # clap CLI entry point
   cli.rs            # subcommand definitions (clap derive structs)
   repo.rs           # git2 data access layer
-  output.rs         # table + JSON output formatting
+  output.rs         # table, JSON, and CSV output formatting
   analysis/
     metrics.rs      # raw data extraction (ownership, coupling, counts, timestamps, churn)
     derived.rs      # derived analysis (decay scoring, file concentration)
@@ -171,7 +203,7 @@ Data flow: `git2 repo -> Vec<CommitInfo> -> metrics -> derived analysis -> outpu
 - **thiserror** -- typed errors in library code
 - **anyhow** -- error handling in CLI layer
 - **itertools** -- combinatorics for coupling analysis
-- **serde** + **serde_json** -- JSON serialization for output
+- **serde** + **serde_json** + **csv** -- JSON and CSV serialization for output
 - **chrono** -- date parsing and formatting
 - **rayon** -- parallel analysis (planned)
 

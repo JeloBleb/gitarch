@@ -63,4 +63,6 @@ pub struct OutputConfig {
     pub include: Vec<String>,
     #[arg(long)]
     pub exclude: Vec<String>,
+    #[arg(long)]
+    pub no_merges: bool,
 }
