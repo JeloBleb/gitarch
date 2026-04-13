@@ -2,8 +2,16 @@
 name = "gitarch"
 version = "0.1.0"
 edition = "2024"
+description = "Extract implicit knowledge from git commit history -- ownership, coupling, decay, churn, and project health"
+license = "MIT"
+repository = "https://github.com/JeloBleb/gitarch"
+homepage = "https://github.com/JeloBleb/gitarch"
+keywords = ["git", "analysis", "code-maat", "ownership", "coupling"]
+categories = ["command-line-utilities", "development-tools"]
+readme = "README.md"
 
 [dependencies]
+clap_complete = "4"
 anyhow = "1.0.100"
 chrono = { version = "0.4.44", features = ["serde"] }
 clap = {version = "4.5.56", features = ["derive"]}

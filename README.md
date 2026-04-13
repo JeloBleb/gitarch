@@ -1,5 +1,8 @@
 # gitarch
 
+[![CI](https://github.com/JeloBleb/gitarch/actions/workflows/ci.yml/badge.svg)](https://github.com/JeloBleb/gitarch/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A modern, streamlined replacement for
 [code-maat](https://github.com/adamtornhill/code-maat). Extracts implicit
 knowledge from git repository commit history -- ownership, coupling, decay,
@@ -24,6 +27,20 @@ Ownership data tells you who to ask for review. Pipe the JSON output into an
 LLM to get a prioritized list of contribution opportunities tailored to a
 newcomer.
 
+## Installation
+
+```bash
+cargo install gitarch
+```
+
+Or build from source:
+
+```bash
+git clone https://github.com/JeloBleb/gitarch.git
+cd gitarch
+cargo install --path .
+```
+
 ## Features
 
 ### Core analyses
@@ -40,16 +57,14 @@ newcomer.
 - **Churn** -- lines added/deleted per file, per author, and over time
 - **Last modified** -- file age tracking
 - **Author activity** -- per-author last active timestamps
-- **Authors per file** -- distinct contributor count per file
 - **Summary** -- repo-wide stats (total commits, files, authors)
 
 ### Additional analyses
 - **Communication** -- developer coupling inferred from shared file ownership
+- **Owner summary** -- per-author stats (files owned, last active, commit count)
 
 ### Planned
-- **Author summary** -- per-author stats (files owned, last active, commit count)
-- **Authors per file** -- distinct contributor count per file (bus factor)
-- **Detailed ownership** -- full author breakdown per file, not just primary
+- **Parallel analysis** -- rayon-based parallelism for large repos
 
 ## Usage
 
@@ -60,6 +75,46 @@ gitarch coupling                       # co-change pairs
 gitarch decay                          # composite decay scores
 gitarch churn                          # lines added/deleted per file
 gitarch communication                  # developer coupling via shared files
+gitarch owner-summary                  # per-author breakdown
+```
+
+### Example output
+
+```
+$ gitarch summary
++---------+-------+--------------+---------+
+| Commits | Files | File Changes | Authors |
++---------+-------+--------------+---------+
+| 29      | 12    | 115          | 2       |
++---------+-------+--------------+---------+
+
+$ gitarch --top 5 coupling
++-------------------------------+----------+
+| File Pair                     | Coupling |
++-------------------------------+----------+
+| Cargo.lock and Cargo.toml     | 100%     |
+| Cargo.lock and src/main.rs    | 100%     |
+| Cargo.toml and src/main.rs    | 100%     |
+| src/cli.rs and src/main.rs    | 93%      |
+| src/main.rs and src/output.rs | 88%      |
++-------------------------------+----------+
+
+$ gitarch --top 5 decay
++-----------------+-------------+
+| File            | Decay Score |
++-----------------+-------------+
+| .gitignore      | 0.28        |
+| src/analysis.rs | 0.21        |
+| Cargo.toml      | 0.14        |
+| Cargo.lock      | 0.14        |
+| AGENTS.md       | 0.09        |
++-----------------+-------------+
+```
+
+All commands support `--json` for machine-readable output:
+
+```bash
+gitarch --json decay | jq '.[] | select(.score > 0.5)'
 ```
 
 ### Global flags
@@ -82,6 +137,16 @@ gitarch communication                  # developer coupling via shared files
 - `decay --decay-threshold <DAYS>` -- number of days until a file is
   considered fully stale (default: 180)
 
+### Shell completions
+
+Generate completions for your shell:
+
+```bash
+gitarch completions bash > ~/.local/share/bash-completion/completions/gitarch
+gitarch completions zsh > ~/.zfunc/_gitarch
+gitarch completions fish > ~/.config/fish/completions/gitarch.fish
+```
+
 ## Architecture
 
 ```
@@ -101,6 +166,7 @@ Data flow: `git2 repo -> Vec<CommitInfo> -> metrics -> derived analysis -> outpu
 
 - **git2** -- libgit2 bindings for direct repository access
 - **clap** (derive) -- CLI parsing
+- **clap_complete** -- shell completion generation
 - **cliux** -- terminal table output
 - **thiserror** -- typed errors in library code
 - **anyhow** -- error handling in CLI layer
@@ -109,27 +175,9 @@ Data flow: `git2 repo -> Vec<CommitInfo> -> metrics -> derived analysis -> outpu
 - **chrono** -- date parsing and formatting
 - **rayon** -- parallel analysis (planned)
 
-## Build Order
+## License
 
-1. ~~Scaffolding -- CLI, git2 repo access, commit walker~~
-2. ~~Core metrics -- ownership, revision counts, churn, timestamps~~
-3. ~~Coupling -- raw co-change counts~~
-4. ~~Decay -- composite decay scoring~~
-5. ~~Module reorganization (metrics.rs + derived.rs)~~
-6. ~~CLI wiring + terminal table output~~
-7. ~~Output improvements (sorting, filtering deleted files, noise reduction)~~
-8. ~~JSON output~~
-9. ~~Communication -- developer coupling~~
-10. ~~Global `--since` / `--until` date filters~~
-11. ~~Decay `--decay-threshold` flag~~
-12. ~~`--version` flag~~
-13. ~~Error handling -- `run()` pattern, `.context()` for user-friendly messages~~
-14. ~~Decay score rounding in table output~~
-15. ~~Coupling percentage display + `--min-coupling-percentage` and `--min-revision-count` flags~~
-16. ~~`--top N` flag~~
-17. New subcommands -- authors-per-file, detailed ownership, author summary
-18. ~~`--path` filter, `--include`/`--exclude` file filtering~~
-19. Tests
+[MIT](LICENSE)
 
 ## References
 

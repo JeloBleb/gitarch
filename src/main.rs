@@ -9,7 +9,8 @@ use chrono::{DateTime, NaiveDate};
 
 use crate::{cli::*, output::*, repo::*};
 
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use clap_complete::generate;
 
 fn main() {
     if let Err(e) = run() {
@@ -20,6 +21,11 @@ fn main() {
 
 fn run() -> anyhow::Result<()> {
     let command = Cli::parse();
+
+    if let Commands::Completions { shell } = &command.command_type {
+        generate(*shell, &mut Cli::command(), "gitarch", &mut std::io::stdout());
+        return Ok(());
+    }
 
     let config = command.config;
 
@@ -57,6 +63,7 @@ fn run() -> anyhow::Result<()> {
         Commands::Communication => print_communication(&filtered_commits, config),
         Commands::Churn => print_churn(&commits, &filtered_commits, config),
         Commands::OwnerSummary => print_owner_summary(&filtered_commits, config),
+        Commands::Completions { .. } => unreachable!(),
     };
 
     Ok(())

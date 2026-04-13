@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use clap_complete::Shell;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -31,6 +32,12 @@ pub enum Commands {
     },
     Churn,
     OwnerSummary,
+    /// Generate shell completions
+    Completions {
+        /// Shell to generate completions for
+        #[arg(value_enum)]
+        shell: Shell,
+    },
 }
 
 #[derive(Debug, Parser, Clone)]
